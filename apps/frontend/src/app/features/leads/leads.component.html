@@ -1,0 +1,213 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <header
+    class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3"
+  >
+    <a
+      routerLink="/dashboard"
+      class="text-gray-400 hover:text-gray-600 transition-colors"
+    >
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 19l-7-7 7-7"
+        />
+      </svg>
+    </a>
+    <h1 class="font-semibold text-gray-900">Fan Leads</h1>
+    <div class="ml-auto flex items-center gap-2">
+      <button (click)="exportCsv()" class="btn-secondary btn-sm">
+        Export CSV
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-8 space-y-6">
+    <!-- Summary Cards -->
+    @if (summary()) {
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="card p-4">
+          <p class="text-xs text-gray-500 mb-1">Total Leads</p>
+          <p class="text-2xl font-bold text-gray-900">{{ summary()!.total }}</p>
+        </div>
+        <div class="card p-4">
+          <p class="text-xs text-gray-500 mb-1">Klaviyo Synced</p>
+          <p class="text-2xl font-bold text-green-600">
+            {{ summary()!.synced }}
+          </p>
+        </div>
+        <div class="card p-4">
+          <p class="text-xs text-gray-500 mb-1">Top Platform</p>
+          <p class="text-lg font-bold text-gray-900 truncate">
+            {{ summary()!.byPlatform[0]?.platform || "—" }}
+          </p>
+        </div>
+        <div class="card p-4">
+          <p class="text-xs text-gray-500 mb-1">Top Country</p>
+          <p class="text-lg font-bold text-gray-900 truncate">
+            {{ summary()!.byCountry[0]?.country || "—" }}
+          </p>
+        </div>
+      </div>
+    }
+
+    <!-- Filters -->
+    <div class="card p-4 flex flex-wrap items-end gap-3">
+      <div>
+        <label class="label">Platform</label>
+        <input
+          type="text"
+          class="input w-40"
+          placeholder="e.g. spotify"
+          [ngModel]="filterPlatform()"
+          (ngModelChange)="filterPlatform.set($event)"
+          name="platform"
+        />
+      </div>
+      <div>
+        <label class="label">Segment</label>
+        <select
+          class="input w-32"
+          [ngModel]="filterSegment()"
+          (ngModelChange)="filterSegment.set($event)"
+          name="segment"
+        >
+          <option value="">All</option>
+          @for (s of segments; track s) {
+            <option [value]="s">{{ s }}</option>
+          }
+        </select>
+      </div>
+      <button (click)="applyFilters()" class="btn-primary btn-sm">Apply</button>
+      <button (click)="clearFilters()" class="btn-secondary btn-sm">
+        Clear
+      </button>
+      <span class="text-sm text-gray-400 ml-auto">{{ total() }} results</span>
+    </div>
+
+    <!-- Table -->
+    @if (loading()) {
+      <div class="card p-8 text-center text-gray-400 text-sm">Loading...</div>
+    } @else if (leads().length === 0) {
+      <div class="card p-12 text-center">
+        <div class="text-4xl mb-3">📭</div>
+        <p class="text-gray-500">
+          No leads yet. Share your page to start collecting fans!
+        </p>
+      </div>
+    } @else {
+      <div class="card overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-50 border-b border-gray-100">
+                <th
+                  class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                >
+                  Email
+                </th>
+                <th
+                  class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                >
+                  Name
+                </th>
+                <th
+                  class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                >
+                  Platform
+                </th>
+                <th
+                  class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                >
+                  Location
+                </th>
+                <th
+                  class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                >
+                  Segment
+                </th>
+                <th
+                  class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                >
+                  Klaviyo
+                </th>
+                <th
+                  class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                >
+                  Page
+                </th>
+                <th
+                  class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                >
+                  Date
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              @for (lead of leads(); track lead.id) {
+                <tr class="hover:bg-gray-50 transition-colors">
+                  <td class="px-4 py-3 font-medium text-gray-900">
+                    {{ lead.email }}
+                  </td>
+                  <td class="px-4 py-3 text-gray-500">
+                    {{ lead.name || "—" }}
+                  </td>
+                  <td class="px-4 py-3">
+                    @if (lead.platform) {
+                      <span
+                        class="px-2 py-0.5 bg-brand-50 text-brand-700 rounded-full text-xs font-medium"
+                        >{{ lead.platform }}</span
+                      >
+                    } @else {
+                      <span class="text-gray-400">—</span>
+                    }
+                  </td>
+                  <td class="px-4 py-3 text-gray-500">
+                    {{ lead.city ? lead.city + ", " : ""
+                    }}{{ lead.country || "—" }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <span
+                      class="px-2 py-0.5 rounded-full text-xs font-medium"
+                      [class]="
+                        lead.segment === 'hot'
+                          ? 'bg-red-100 text-red-700'
+                          : lead.segment === 'warm'
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'bg-gray-100 text-gray-600'
+                      "
+                    >
+                      {{ lead.segment }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    @if (lead.klaviyoSynced) {
+                      <span class="text-green-600 text-xs font-medium"
+                        >✓ Synced</span
+                      >
+                    } @else {
+                      <span class="text-gray-400 text-xs">Pending</span>
+                    }
+                  </td>
+                  <td class="px-4 py-3 text-gray-500 text-xs">
+                    {{ lead.page?.title || "—" }}
+                  </td>
+                  <td class="px-4 py-3 text-gray-400 text-xs">
+                    {{ lead.capturedAt | date: "d MMM, h:mm a" }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </main>
+</div>

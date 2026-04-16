@@ -1,0 +1,448 @@
+<div class="h-screen flex flex-col bg-gray-100 overflow-hidden">
+  <!-- ─── TOP BAR ─────────────────────────────────────────── -->
+  <header
+    class="bg-white border-b border-gray-200 flex items-center gap-2 px-3 py-2 flex-shrink-0 z-20"
+  >
+    <!-- Back -->
+    <a
+      [routerLink]="projectId() ? ['/project', projectId()] : ['/dashboard']"
+      class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+      title="Back to project"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 19l-7-7 7-7"
+        />
+      </svg>
+    </a>
+
+    <!-- Page title -->
+    <input
+      type="text"
+      class="text-sm font-medium text-gray-900 border-0 outline-none bg-transparent w-40 truncate focus:bg-gray-50 focus:px-2 rounded"
+      [ngModel]="pageTitle()"
+      (ngModelChange)="pageTitle.set($event)"
+      name="pageTitle"
+    />
+
+    <!-- Save status -->
+    <span class="text-xs text-gray-400 flex-shrink-0 ml-1">
+      @if (isSaving()) {
+        <span class="flex items-center gap-1">
+          <svg class="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
+          </svg>
+          Saving...
+        </span>
+      } @else if (savedAt()) {
+        ✓ Saved
+      }
+    </span>
+
+    <!-- Undo -->
+    <button
+      (click)="undo()"
+      [disabled]="!history().length"
+      class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg disabled:opacity-30 transition-colors ml-auto"
+      title="Undo"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M3 10h10a8 8 0 018 8v2M3 10l6 6M3 10l6-6"
+        />
+      </svg>
+    </button>
+
+    <!-- Device mode -->
+    <div class="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5">
+      @for (mode of ["desktop", "tablet", "mobile"]; track mode) {
+        <button
+          (click)="deviceMode.set($any(mode))"
+          class="p-1.5 rounded-md transition-colors"
+          [class]="
+            deviceMode() === mode
+              ? 'bg-white shadow-sm text-brand-500'
+              : 'text-gray-400 hover:text-gray-600'
+          "
+          [title]="mode"
+        >
+          @if (mode === "desktop") {
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+          } @else if (mode === "tablet") {
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+              />
+            </svg>
+          } @else {
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+              />
+            </svg>
+          }
+        </button>
+      }
+    </div>
+
+    <!-- Publish -->
+    <button
+      (click)="publishPage()"
+      [disabled]="isPublishing()"
+      class="btn-primary btn-sm ml-1"
+    >
+      @if (isPublishing()) {
+        Publishing...
+      } @else {
+        Publish
+      }
+    </button>
+  </header>
+
+  <!-- ─── BODY ─────────────────────────────────────────────── -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Rail -->
+    <div
+      class="w-14 bg-white border-r border-gray-200 flex flex-col items-center py-3 gap-1 flex-shrink-0"
+    >
+      @for (
+        tab of [
+          { id: "elements", icon: "⊞" },
+          { id: "templates", icon: "▦" },
+          { id: "layers", icon: "◫" },
+          { id: "settings", icon: "⚙" },
+        ];
+        track tab.id
+      ) {
+        <button
+          (click)="railTab.set($any(tab.id))"
+          class="w-9 h-9 flex items-center justify-center rounded-xl text-base transition-colors"
+          [class]="
+            railTab() === tab.id
+              ? 'bg-brand-500 text-white'
+              : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'
+          "
+          [title]="tab.id"
+        >
+          {{ tab.icon }}
+        </button>
+      }
+    </div>
+
+    <!-- Left Panel -->
+    <div
+      class="w-64 bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto"
+    >
+      @if (railTab() === "elements") {
+        <app-elements-panel
+          [elements]="elements"
+          (addSection)="addSection($event)"
+        />
+      } @else if (railTab() === "templates") {
+        <div class="p-4">
+          <p
+            class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"
+          >
+            Templates
+          </p>
+          <div class="space-y-2">
+            @for (tpl of templates; track tpl.label) {
+              <button
+                (click)="applyTemplate(tpl.sections)"
+                class="w-full text-left p-3 rounded-xl border border-gray-200 hover:border-brand-400 hover:bg-brand-50 transition-all group"
+              >
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-xl">{{ tpl.icon }}</span>
+                  <span class="font-medium text-sm text-gray-900">{{
+                    tpl.label
+                  }}</span>
+                </div>
+                <p class="text-xs text-gray-400">
+                  {{ tpl.sections.join(" → ") }}
+                </p>
+              </button>
+            }
+          </div>
+        </div>
+      } @else if (railTab() === "layers") {
+        <div class="p-4">
+          <p
+            class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"
+          >
+            Layers
+          </p>
+          @if (sections().length === 0) {
+            <p class="text-sm text-gray-400">No sections yet</p>
+          }
+          <div class="space-y-1">
+            @for (s of sections(); track s.id; let i = $index) {
+              <button
+                (click)="selectedId.set(s.id)"
+                class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors"
+                [class]="
+                  selectedId() === s.id
+                    ? 'bg-brand-50 text-brand-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-50'
+                "
+              >
+                {{ i + 1 }}. {{ s.type }}
+              </button>
+            }
+          </div>
+        </div>
+      } @else if (railTab() === "settings") {
+        <div class="p-4 space-y-4">
+          <p
+            class="text-xs font-semibold text-gray-400 uppercase tracking-wider"
+          >
+            Page Settings
+          </p>
+          <div>
+            <label class="label">Meta Title</label>
+            <input type="text" class="input" placeholder="SEO title" />
+          </div>
+          <div>
+            <label class="label">Meta Description</label>
+            <textarea
+              class="input resize-none"
+              rows="3"
+              placeholder="SEO description"
+            ></textarea>
+          </div>
+          <div>
+            <label class="label">URL Slug</label>
+            <div class="flex items-center gap-1">
+              <span class="text-xs text-gray-400">/p/</span>
+              <input
+                type="text"
+                class="input text-xs"
+                [ngModel]="pageSlug()"
+                (ngModelChange)="pageSlug.set($event)"
+                name="pageSlug"
+              />
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Canvas -->
+    <app-canvas
+      class="flex-1 overflow-auto"
+      [sections]="sections()"
+      [selectedId]="selectedId()"
+      [canvasWidth]="canvasWidth()"
+      (selectSection)="selectedId.set($event)"
+      (addSection)="addSection($event)"
+      (deleteSection)="deleteSection($event)"
+      (duplicateSection)="duplicateSection($event)"
+      (moveSection)="moveSection($event[0], $event[1])"
+      (dropped)="onDrop($event)"
+    />
+
+    <!-- Right Panel -->
+    @if (selectedSection()) {
+      <div
+        class="w-72 bg-white border-l border-gray-200 flex-shrink-0 flex flex-col overflow-hidden"
+      >
+        <!-- Save as Project Default banner (header / footer only) -->
+        @if (
+          selectedSection()!.type === "header" ||
+          selectedSection()!.type === "footer"
+        ) {
+          <div
+            class="flex-shrink-0 px-4 py-2.5 border-b border-gray-100 flex items-center justify-between"
+            [class]="
+              savedDefaultType() === selectedSection()!.type
+                ? 'bg-green-50'
+                : 'bg-amber-50'
+            "
+          >
+            @if (savedDefaultType() === selectedSection()!.type) {
+              <span class="text-xs text-green-700 font-medium"
+                >✓ Saved as project default!</span
+              >
+            } @else {
+              <span class="text-xs text-amber-700">
+                Save this
+                {{ selectedSection()!.type }} as project default — it will
+                auto-load on new pages.
+              </span>
+              <button
+                (click)="saveAsProjectDefault($any(selectedSection()!.type))"
+                [disabled]="savingDefault()"
+                class="ml-2 flex-shrink-0 text-xs font-semibold px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors disabled:opacity-50"
+              >
+                {{ savingDefault() ? "Saving..." : "Save" }}
+              </button>
+            }
+          </div>
+        }
+        <app-properties-panel
+          class="flex-1 overflow-y-auto"
+          [section]="selectedSection()!"
+          [activeTab]="activeRsbTab()"
+          (tabChange)="activeRsbTab.set($event)"
+          (dataChange)="updateSectionData(selectedSection()!.id, $event)"
+        />
+      </div>
+    } @else {
+      <div
+        class="w-72 bg-white border-l border-gray-200 flex-shrink-0 flex flex-col items-center justify-center text-center p-6"
+      >
+        <div
+          class="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center mb-3"
+        >
+          <svg
+            class="w-6 h-6 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"
+            />
+          </svg>
+        </div>
+        <p class="text-sm font-medium text-gray-500">Select a section</p>
+        <p class="text-xs text-gray-400 mt-1">
+          Click on any section in the canvas to edit it
+        </p>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Publish Modal -->
+@if (showPublishModal()) {
+  <div
+    class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+  >
+    <div class="card w-full max-w-md p-6">
+      <div class="text-center mb-6">
+        <div
+          class="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-3"
+        >
+          <svg
+            class="w-7 h-7 text-green-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+        </div>
+        <h2 class="text-lg font-bold text-gray-900">Page is Live! 🎉</h2>
+        @if (publishResult()?.ga4MeasurementId) {
+          <p class="text-xs text-green-600 mt-1">
+            GA4 Tracking: {{ publishResult()!.ga4MeasurementId }}
+          </p>
+        }
+      </div>
+
+      <div class="bg-gray-50 rounded-xl p-3 mb-4 flex items-center gap-2">
+        <span class="text-sm text-gray-600 flex-1 truncate">
+          {{ "https://yourdomain.com/p/" + publishResult()?.slug }}
+        </span>
+        <button
+          (click)="copyPublishedLink()"
+          class="btn-secondary btn-sm flex-shrink-0"
+        >
+          Copy
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 mb-4">
+        <a
+          [href]="'/p/' + publishResult()?.slug"
+          target="_blank"
+          class="btn-secondary text-center"
+        >
+          Open Page
+        </a>
+        <button
+          (click)="whatsappShare()"
+          class="btn bg-green-500 text-white hover:bg-green-600"
+        >
+          WhatsApp Share
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <a
+          [routerLink]="['/analytics', pageId()]"
+          class="btn-secondary text-center"
+        >
+          View Analytics
+        </a>
+        <button (click)="showPublishModal.set(false)" class="btn-primary">
+          Back to Builder
+        </button>
+      </div>
+    </div>
+  </div>
+}

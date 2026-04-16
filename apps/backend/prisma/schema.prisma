@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+}
+
+model Project {
+  id            String    @id @default(uuid())
+  name          String
+  slug          String    @unique
+  description   String?
+  color         String    @default("#534AB7")
+  logo          String?
+  defaultHeader Json?
+  defaultFooter Json?
+  // Meta Ads
+  metaPixelId   String?
+  metaCapiToken String?
+  // Klaviyo
+  klaviyoApiKey String?
+  klaviyoListId String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  pages         Page[]
+  leads         FanLead[]
+}
+
+model Page {
+  id               String        @id @default(uuid())
+  projectId        String
+  project          Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title            String
+  slug             String        @unique
+  sections         Json          @default("[]")
+  isPublished      Boolean       @default(false)
+  publishedAt      DateTime?
+  ga4PropertyId    String?
+  ga4MeasurementId String?
+  ga4StreamId      String?
+  metaTitle        String?
+  metaDescription  String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  linkTrackers     LinkTracker[]
+  leads            FanLead[]
+}
+
+model LinkTracker {
+  id        String     @id @default(uuid())
+  pageId    String
+  page      Page       @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  label     String
+  targetUrl String
+  slug      String     @unique
+  platform  String?
+  clicks    Int        @default(0)
+  createdAt DateTime   @default(now())
+  clickLogs ClickLog[]
+}
+
+model ClickLog {
+  id        String      @id @default(uuid())
+  trackerId String
+  tracker   LinkTracker @relation(fields: [trackerId], references: [id], onDelete: Cascade)
+  ip        String?
+  city      String?
+  country   String?
+  device    String?
+  referer   String?
+  clickedAt DateTime    @default(now())
+}
+
+model FanLead {
+  id            String   @id @default(uuid())
+  pageId        String
+  page          Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  email         String
+  name          String?
+  platform      String?
+  source        String?
+  city          String?
+  country       String?
+  device        String?
+  segment       String   @default("cold")
+  klaviyoSynced Boolean  @default(false)
+  capturedAt    DateTime @default(now())
+}

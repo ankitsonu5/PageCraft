@@ -1,0 +1,212 @@
+<div class="flex-1 bg-gray-200 overflow-auto p-6 h-full">
+  <!-- Canvas frame -->
+  <div
+    class="mx-auto bg-white shadow-xl transition-all duration-300 min-h-full"
+    [style.max-width]="canvasWidth"
+  >
+    @if (sections.length === 0) {
+      <!-- Empty state -->
+      <div
+        class="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center"
+      >
+        <div
+          class="w-20 h-20 bg-brand-50 rounded-3xl flex items-center justify-center mb-4"
+        >
+          <svg
+            class="w-10 h-10 text-brand-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">
+          Canvas is empty
+        </h3>
+        <p class="text-sm text-gray-400 mb-6 max-w-xs">
+          Drag elements from the left panel or click to add sections
+        </p>
+        <div class="flex flex-wrap gap-2 justify-center">
+          @for (
+            tpl of [
+              ["🎸", "Musician", ["hero", "features", "stats", "contact"]],
+              ["💼", "Business", ["hero", "features", "cta", "contact"]],
+            ];
+            track tpl[0]
+          ) {
+            <button
+              (click)="addSection.emit('hero')"
+              class="btn-secondary btn-sm"
+            >
+              {{ tpl[0] }} {{ tpl[1] }} Template
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Sections list (CDK drag-drop) -->
+    <div
+      cdkDropList
+      [cdkDropListData]="sections"
+      (cdkDropListDropped)="onDrop($event)"
+      class="relative"
+    >
+      @for (section of sections; track section.id; let i = $index) {
+        <div
+          cdkDrag
+          class="section-wrapper relative"
+          [class.selected]="selectedId === section.id"
+          (mouseenter)="hoveredId = section.id"
+          (mouseleave)="hoveredId = null"
+          (click)="selectSection.emit(section.id)"
+        >
+          <!-- Drag placeholder -->
+          <div
+            *cdkDragPlaceholder
+            class="h-16 bg-brand-50 border-2 border-dashed border-brand-300 rounded"
+          ></div>
+
+          <!-- Floating toolbar (hover or selected) -->
+          @if (hoveredId === section.id || selectedId === section.id) {
+            <div
+              class="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5 bg-white border border-gray-200 shadow-lg rounded-lg px-1 py-0.5"
+              (click)="$event.stopPropagation()"
+            >
+              <!-- Section label -->
+              <span
+                class="text-xs text-gray-500 px-1.5 font-medium border-r border-gray-200 mr-0.5"
+              >
+                {{ section.type }}
+              </span>
+              <!-- Drag handle -->
+              <button
+                cdkDragHandle
+                class="p-1 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
+                title="Drag"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 8h16M4 16h16"
+                  />
+                </svg>
+              </button>
+              <!-- Move up -->
+              <button
+                (click)="moveSection.emit([section.id, -1])"
+                [disabled]="i === 0"
+                class="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                title="Move up"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 15l7-7 7 7"
+                  />
+                </svg>
+              </button>
+              <!-- Move down -->
+              <button
+                (click)="moveSection.emit([section.id, 1])"
+                [disabled]="i === sections.length - 1"
+                class="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                title="Move down"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <!-- Duplicate -->
+              <button
+                (click)="duplicateSection.emit(section.id)"
+                class="p-1 text-gray-400 hover:text-gray-600"
+                title="Duplicate"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+              </button>
+              <!-- Delete -->
+              <button
+                (click)="deleteSection.emit(section.id)"
+                class="p-1 text-red-400 hover:text-red-600"
+                title="Delete"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          }
+
+          <!-- Section content -->
+          <app-section-renderer [section]="section" />
+
+          <!-- Add between sections -->
+          @if (hoveredId === section.id || selectedId === section.id) {
+            <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 z-10">
+              <button
+                (click)="$event.stopPropagation(); addSection.emit('hero')"
+                class="w-6 h-6 bg-brand-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-brand-600 transition-colors text-sm font-bold leading-none"
+                title="Add section below"
+              >
+                +
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,1487 @@
+<div class="flex flex-col h-full">
+  <!-- Header + Tabs -->
+  <div class="border-b border-gray-200 px-4 pt-4 pb-0 flex-shrink-0">
+    <p
+      class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 capitalize"
+    >
+      {{ section.type }}
+    </p>
+    <div class="flex gap-0">
+      @for (tab of ["content", "style"]; track tab) {
+        <button
+          (click)="tabChange.emit($any(tab))"
+          class="flex-1 py-2 text-sm font-medium border-b-2 transition-colors capitalize"
+          [class]="
+            activeTab === tab
+              ? 'border-brand-500 text-brand-600'
+              : 'border-transparent text-gray-400 hover:text-gray-600'
+          "
+        >
+          {{ tab }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Panel body -->
+  <div class="flex-1 overflow-y-auto p-4 space-y-4">
+    <!-- ══════════ HEADER ══════════ -->
+    @if (section.type === "header") {
+      @if (activeTab === "content") {
+        <!-- Logo -->
+        <div>
+          <label class="label">Logo Type</label>
+          <select
+            class="input"
+            [ngModel]="d['logoType']"
+            (ngModelChange)="patch('logoType', $event)"
+          >
+            <option value="text">Text</option>
+            <option value="image">Image</option>
+          </select>
+        </div>
+        @if (d["logoType"] === "text") {
+          <div>
+            <label class="label">Logo Text</label>
+            <input
+              class="input"
+              [ngModel]="d['logoText']"
+              (ngModelChange)="patch('logoText', $event)"
+            />
+          </div>
+        } @else {
+          <div>
+            <label class="label">Logo Image</label>
+            <input
+              class="input mb-2"
+              placeholder="https://..."
+              [ngModel]="d['logoUrl']"
+              (ngModelChange)="patch('logoUrl', $event)"
+            />
+            <label
+              class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-brand-400 hover:text-brand-500 transition-colors"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                />
+              </svg>
+              {{ uploading() ? "Uploading..." : "Upload Logo" }}
+              <input
+                type="file"
+                accept="image/*"
+                class="hidden"
+                [disabled]="uploading()"
+                (change)="uploadImage($event, 'logoUrl')"
+              />
+            </label>
+          </div>
+        }
+        <!-- Nav Links -->
+        <div>
+          <p class="label mb-2">Navigation Links</p>
+          <div class="space-y-2">
+            @for (link of d["links"]; track $index; let i = $index) {
+              <div class="flex items-center gap-2">
+                <input
+                  class="input text-xs flex-1"
+                  placeholder="Label"
+                  [ngModel]="link.label"
+                  (ngModelChange)="patchItem('links', i, 'label', $event)"
+                />
+                <input
+                  class="input text-xs flex-1"
+                  placeholder="URL"
+                  [ngModel]="link.url"
+                  (ngModelChange)="patchItem('links', i, 'url', $event)"
+                />
+                <button
+                  (click)="removeItem('links', i)"
+                  class="text-red-400 text-xs px-1 flex-shrink-0"
+                >
+                  ✕
+                </button>
+              </div>
+            }
+          </div>
+          <button
+            (click)="addItem('links', { label: 'New Link', url: '#' })"
+            class="btn-secondary btn-sm w-full mt-2"
+          >
+            + Add Link
+          </button>
+        </div>
+        <!-- CTA Button -->
+        <div>
+          <label class="label">CTA Button Text (optional)</label>
+          <input
+            class="input"
+            placeholder="e.g. Book Now"
+            [ngModel]="d['ctaText']"
+            (ngModelChange)="patch('ctaText', $event)"
+          />
+        </div>
+        @if (d["ctaText"]) {
+          <div>
+            <label class="label">CTA Button URL</label>
+            <input
+              class="input"
+              placeholder="#contact"
+              [ngModel]="d['ctaUrl']"
+              (ngModelChange)="patch('ctaUrl', $event)"
+            />
+          </div>
+        }
+      }
+      @if (activeTab === "style") {
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Background</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['bgColor']"
+              (ngModelChange)="patch('bgColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Logo Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['textColor']"
+              (ngModelChange)="patch('textColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Link Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['linkColor']"
+              (ngModelChange)="patch('linkColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">CTA Background</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['ctaBgColor']"
+              (ngModelChange)="patch('ctaBgColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">CTA Text Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['ctaTextColor']"
+              (ngModelChange)="patch('ctaTextColor', $event)"
+            />
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ══════════ FOOTER ══════════ -->
+    @if (section.type === "footer") {
+      @if (activeTab === "content") {
+        <!-- Logo -->
+        <div>
+          <label class="label">Logo Type</label>
+          <select
+            class="input"
+            [ngModel]="d['logoType']"
+            (ngModelChange)="patch('logoType', $event)"
+          >
+            <option value="text">Text</option>
+            <option value="image">Image</option>
+          </select>
+        </div>
+        @if (d["logoType"] === "text") {
+          <div>
+            <label class="label">Logo Text</label>
+            <input
+              class="input"
+              [ngModel]="d['logoText']"
+              (ngModelChange)="patch('logoText', $event)"
+            />
+          </div>
+        } @else {
+          <div>
+            <label class="label">Logo Image</label>
+            <input
+              class="input mb-2"
+              placeholder="https://..."
+              [ngModel]="d['logoUrl']"
+              (ngModelChange)="patch('logoUrl', $event)"
+            />
+            <label
+              class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-brand-400 hover:text-brand-500 transition-colors"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                />
+              </svg>
+              {{ uploading() ? "Uploading..." : "Upload Logo" }}
+              <input
+                type="file"
+                accept="image/*"
+                class="hidden"
+                [disabled]="uploading()"
+                (change)="uploadImage($event, 'logoUrl')"
+              />
+            </label>
+          </div>
+        }
+        <div>
+          <label class="label">Tagline</label>
+          <input
+            class="input"
+            placeholder="Short tagline or description"
+            [ngModel]="d['tagline']"
+            (ngModelChange)="patch('tagline', $event)"
+          />
+        </div>
+        <!-- Link Columns -->
+        <div>
+          <p class="label mb-2">Link Columns</p>
+          @for (col of d["columns"]; track $index; let ci = $index) {
+            <div class="border border-gray-200 rounded-lg p-3 mb-2 space-y-2">
+              <div class="flex items-center justify-between">
+                <input
+                  class="input text-xs font-semibold flex-1"
+                  placeholder="Column Heading"
+                  [ngModel]="col.heading"
+                  (ngModelChange)="patchItem('columns', ci, 'heading', $event)"
+                />
+                <button
+                  (click)="removeItem('columns', ci)"
+                  class="ml-2 text-red-400 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+              @for (link of col.links; track $index; let li = $index) {
+                <div class="flex items-center gap-1.5">
+                  <input
+                    class="input text-xs flex-1"
+                    placeholder="Label"
+                    [ngModel]="link.label"
+                    (ngModelChange)="patchColumnLink(ci, li, 'label', $event)"
+                  />
+                  <input
+                    class="input text-xs flex-1"
+                    placeholder="URL"
+                    [ngModel]="link.url"
+                    (ngModelChange)="patchColumnLink(ci, li, 'url', $event)"
+                  />
+                  <button
+                    (click)="removeColumnLink(ci, li)"
+                    class="text-red-400 text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+              }
+              <button
+                (click)="addColumnLink(ci)"
+                class="btn-secondary btn-sm w-full text-xs"
+              >
+                + Add Link
+              </button>
+            </div>
+          }
+          <button
+            (click)="
+              addItem('columns', {
+                heading: 'Column',
+                links: [{ label: 'Link', url: '#' }],
+              })
+            "
+            class="btn-secondary btn-sm w-full"
+          >
+            + Add Column
+          </button>
+        </div>
+        <!-- Social Links -->
+        <div>
+          <p class="label mb-2">Social Links</p>
+          <div class="space-y-2">
+            @for (social of d["socials"]; track $index; let i = $index) {
+              <div class="flex items-center gap-2">
+                <select
+                  class="input text-xs w-28 flex-shrink-0"
+                  [ngModel]="social.platform"
+                  (ngModelChange)="patchItem('socials', i, 'platform', $event)"
+                >
+                  <option value="instagram">Instagram</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="twitter">Twitter / X</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="snapchat">Snapchat</option>
+                </select>
+                <input
+                  class="input text-xs flex-1"
+                  placeholder="URL"
+                  [ngModel]="social.url"
+                  (ngModelChange)="patchItem('socials', i, 'url', $event)"
+                />
+                <button
+                  (click)="removeItem('socials', i)"
+                  class="text-red-400 text-xs flex-shrink-0"
+                >
+                  ✕
+                </button>
+              </div>
+            }
+          </div>
+          <button
+            (click)="addItem('socials', { platform: 'instagram', url: '' })"
+            class="btn-secondary btn-sm w-full mt-2"
+          >
+            + Add Social
+          </button>
+        </div>
+        <div>
+          <label class="label">Copyright Text</label>
+          <input
+            class="input"
+            [ngModel]="d['copyright']"
+            (ngModelChange)="patch('copyright', $event)"
+          />
+        </div>
+      }
+      @if (activeTab === "style") {
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Background</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['bgColor']"
+              (ngModelChange)="patch('bgColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Text Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['textColor']"
+              (ngModelChange)="patch('textColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Muted / Link Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['mutedColor']"
+              (ngModelChange)="patch('mutedColor', $event)"
+            />
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ══════════ HERO ══════════ -->
+    @if (section.type === "hero") {
+      @if (activeTab === "content") {
+        <div>
+          <label class="label">Headline</label>
+          <input
+            class="input"
+            [ngModel]="d['headline']"
+            (ngModelChange)="patch('headline', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Subtext</label>
+          <textarea
+            class="input resize-none"
+            rows="3"
+            [ngModel]="d['subtext']"
+            (ngModelChange)="patch('subtext', $event)"
+          ></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Primary Btn Text</label>
+            <input
+              class="input"
+              [ngModel]="d['primaryBtnText']"
+              (ngModelChange)="patch('primaryBtnText', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Primary Btn URL</label>
+            <input
+              class="input"
+              [ngModel]="d['primaryBtnUrl']"
+              (ngModelChange)="patch('primaryBtnUrl', $event)"
+            />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Secondary Btn Text</label>
+            <input
+              class="input"
+              [ngModel]="d['secondaryBtnText']"
+              (ngModelChange)="patch('secondaryBtnText', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Secondary Btn URL</label>
+            <input
+              class="input"
+              [ngModel]="d['secondaryBtnUrl']"
+              (ngModelChange)="patch('secondaryBtnUrl', $event)"
+            />
+          </div>
+        </div>
+        <div>
+          <label class="label">Text Align</label>
+          <select
+            class="input"
+            [ngModel]="d['textAlign']"
+            (ngModelChange)="patch('textAlign', $event)"
+          >
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
+        </div>
+      }
+      @if (activeTab === "style") {
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Background</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['bgColor']"
+              (ngModelChange)="patch('bgColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Text Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['textColor']"
+              (ngModelChange)="patch('textColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Accent Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['accentColor']"
+              (ngModelChange)="patch('accentColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Padding Y (px)</label>
+            <input
+              type="number"
+              class="input"
+              [ngModel]="d['paddingY']"
+              (ngModelChange)="patch('paddingY', $event)"
+            />
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ══════════ FEATURES ══════════ -->
+    @if (section.type === "features") {
+      @if (activeTab === "content") {
+        <div>
+          <label class="label">Title</label>
+          <input
+            class="input"
+            [ngModel]="d['title']"
+            (ngModelChange)="patch('title', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Subtitle</label>
+          <input
+            class="input"
+            [ngModel]="d['subtitle']"
+            (ngModelChange)="patch('subtitle', $event)"
+          />
+        </div>
+        <div>
+          <label class="label text-xs text-gray-500 mb-1">Items</label>
+          @for (item of d["items"]; track $index; let i = $index) {
+            <div class="border border-gray-200 rounded-lg p-3 mb-2 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-gray-500"
+                  >Item {{ i + 1 }}</span
+                >
+                <button
+                  (click)="removeItem('items', i)"
+                  class="text-red-400 hover:text-red-600 text-xs"
+                >
+                  Remove
+                </button>
+              </div>
+              <input
+                class="input text-sm"
+                placeholder="Icon (emoji)"
+                [ngModel]="item.icon"
+                (ngModelChange)="patchItem('items', i, 'icon', $event)"
+              />
+              <input
+                class="input text-sm"
+                placeholder="Title"
+                [ngModel]="item.title"
+                (ngModelChange)="patchItem('items', i, 'title', $event)"
+              />
+              <input
+                class="input text-sm"
+                placeholder="Description"
+                [ngModel]="item.desc"
+                (ngModelChange)="patchItem('items', i, 'desc', $event)"
+              />
+            </div>
+          }
+          <button
+            (click)="
+              addItem('items', {
+                icon: '⭐',
+                title: 'New Feature',
+                desc: 'Description here',
+              })
+            "
+            class="btn-secondary btn-sm w-full"
+          >
+            + Add Item
+          </button>
+        </div>
+      }
+      @if (activeTab === "style") {
+        <div>
+          <label class="label">Background</label>
+          <input
+            type="color"
+            class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+            [ngModel]="d['bgColor']"
+            (ngModelChange)="patch('bgColor', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Columns</label>
+          <select
+            class="input"
+            [ngModel]="d['columns']"
+            (ngModelChange)="patch('columns', $event)"
+          >
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Card Style</label>
+          <select
+            class="input"
+            [ngModel]="d['cardStyle']"
+            (ngModelChange)="patch('cardStyle', $event)"
+          >
+            <option value="bordered">Bordered</option>
+            <option value="shadow">Shadow</option>
+            <option value="filled">Filled</option>
+          </select>
+        </div>
+      }
+    }
+
+    <!-- ══════════ STATS ══════════ -->
+    @if (section.type === "stats") {
+      @if (activeTab === "content") {
+        @for (item of d["items"]; track $index; let i = $index) {
+          <div class="border border-gray-200 rounded-lg p-3 mb-2 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-medium text-gray-500"
+                >Stat {{ i + 1 }}</span
+              >
+              <button
+                (click)="removeItem('items', i)"
+                class="text-red-400 text-xs"
+              >
+                Remove
+              </button>
+            </div>
+            <input
+              class="input text-sm"
+              placeholder="Number (e.g. 500+)"
+              [ngModel]="item.number"
+              (ngModelChange)="patchItem('items', i, 'number', $event)"
+            />
+            <input
+              class="input text-sm"
+              placeholder="Label"
+              [ngModel]="item.label"
+              (ngModelChange)="patchItem('items', i, 'label', $event)"
+            />
+          </div>
+        }
+        <button
+          (click)="addItem('items', { number: '0', label: 'Label' })"
+          class="btn-secondary btn-sm w-full"
+        >
+          + Add Stat
+        </button>
+      }
+      @if (activeTab === "style") {
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Background</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['bgColor']"
+              (ngModelChange)="patch('bgColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Number Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['accentColor']"
+              (ngModelChange)="patch('accentColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Text Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['textColor']"
+              (ngModelChange)="patch('textColor', $event)"
+            />
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ══════════ IMAGE + TEXT ══════════ -->
+    @if (section.type === "image-text") {
+      @if (activeTab === "content") {
+        <div>
+          <label class="label">Tag</label>
+          <input
+            class="input"
+            [ngModel]="d['tag']"
+            (ngModelChange)="patch('tag', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Heading</label>
+          <input
+            class="input"
+            [ngModel]="d['heading']"
+            (ngModelChange)="patch('heading', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Body Text</label>
+          <textarea
+            class="input resize-none"
+            rows="4"
+            [ngModel]="d['body']"
+            (ngModelChange)="patch('body', $event)"
+          ></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">CTA Text</label>
+            <input
+              class="input"
+              [ngModel]="d['ctaText']"
+              (ngModelChange)="patch('ctaText', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">CTA URL</label>
+            <input
+              class="input"
+              [ngModel]="d['ctaUrl']"
+              (ngModelChange)="patch('ctaUrl', $event)"
+            />
+          </div>
+        </div>
+        <div>
+          <label class="label">Image</label>
+          <input
+            class="input mb-2"
+            placeholder="https://... or upload below"
+            [ngModel]="d['imageUrl']"
+            (ngModelChange)="patch('imageUrl', $event)"
+          />
+          <label
+            class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-brand-400 hover:text-brand-500 transition-colors"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+              />
+            </svg>
+            {{ uploading() ? "Uploading..." : "Upload Image" }}
+            <input
+              type="file"
+              accept="image/*"
+              class="hidden"
+              [disabled]="uploading()"
+              (change)="uploadImage($event, 'imageUrl')"
+            />
+          </label>
+          @if (uploadError()) {
+            <p class="text-xs text-red-500 mt-1">{{ uploadError() }}</p>
+          }
+          @if (d["imageUrl"]) {
+            <img
+              [src]="d['imageUrl']"
+              class="mt-2 w-full rounded-lg object-cover h-24"
+            />
+          }
+        </div>
+        <div>
+          <label class="label">Image Position</label>
+          <select
+            class="input"
+            [ngModel]="d['imagePosition']"
+            (ngModelChange)="patch('imagePosition', $event)"
+          >
+            <option value="right">Right</option>
+            <option value="left">Left</option>
+          </select>
+        </div>
+      }
+      @if (activeTab === "style") {
+        <div>
+          <label class="label">Background</label>
+          <input
+            type="color"
+            class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+            [ngModel]="d['bgColor']"
+            (ngModelChange)="patch('bgColor', $event)"
+          />
+        </div>
+      }
+    }
+
+    <!-- ══════════ TESTIMONIALS ══════════ -->
+    @if (section.type === "testimonials") {
+      @if (activeTab === "content") {
+        <div>
+          <label class="label">Title</label>
+          <input
+            class="input"
+            [ngModel]="d['title']"
+            (ngModelChange)="patch('title', $event)"
+          />
+        </div>
+        @for (item of d["items"]; track $index; let i = $index) {
+          <div class="border border-gray-200 rounded-lg p-3 mb-2 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-medium text-gray-500"
+                >Review {{ i + 1 }}</span
+              >
+              <button
+                (click)="removeItem('items', i)"
+                class="text-red-400 text-xs"
+              >
+                Remove
+              </button>
+            </div>
+            <textarea
+              class="input text-sm resize-none"
+              rows="3"
+              placeholder="Review text"
+              [ngModel]="item.text"
+              (ngModelChange)="patchItem('items', i, 'text', $event)"
+            ></textarea>
+            <input
+              class="input text-sm"
+              placeholder="Name"
+              [ngModel]="item.name"
+              (ngModelChange)="patchItem('items', i, 'name', $event)"
+            />
+            <input
+              class="input text-sm"
+              placeholder="Role"
+              [ngModel]="item.role"
+              (ngModelChange)="patchItem('items', i, 'role', $event)"
+            />
+            <div>
+              <label class="label text-xs">Rating</label>
+              <select
+                class="input text-sm"
+                [ngModel]="item.rating"
+                (ngModelChange)="patchItem('items', i, 'rating', $event)"
+              >
+                @for (r of [5, 4, 3, 2, 1]; track r) {
+                  <option [value]="r">{{ r }} ⭐</option>
+                }
+              </select>
+            </div>
+          </div>
+        }
+        <button
+          (click)="
+            addItem('items', {
+              text: 'Great service!',
+              name: 'New Patient',
+              role: 'Patient',
+              rating: 5,
+            })
+          "
+          class="btn-secondary btn-sm w-full"
+        >
+          + Add Review
+        </button>
+      }
+      @if (activeTab === "style") {
+        <div>
+          <label class="label">Background</label>
+          <input
+            type="color"
+            class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+            [ngModel]="d['bgColor']"
+            (ngModelChange)="patch('bgColor', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Card Style</label>
+          <select
+            class="input"
+            [ngModel]="d['cardStyle']"
+            (ngModelChange)="patch('cardStyle', $event)"
+          >
+            <option value="bordered">Bordered</option>
+            <option value="shadow">Shadow</option>
+          </select>
+        </div>
+      }
+    }
+
+    <!-- ══════════ CTA ══════════ -->
+    @if (section.type === "cta") {
+      @if (activeTab === "content") {
+        <div>
+          <label class="label">Headline</label>
+          <input
+            class="input"
+            [ngModel]="d['headline']"
+            (ngModelChange)="patch('headline', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Subtext</label>
+          <textarea
+            class="input resize-none"
+            rows="2"
+            [ngModel]="d['subtext']"
+            (ngModelChange)="patch('subtext', $event)"
+          ></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Button Text</label>
+            <input
+              class="input"
+              [ngModel]="d['btnText']"
+              (ngModelChange)="patch('btnText', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Button URL</label>
+            <input
+              class="input"
+              [ngModel]="d['btnUrl']"
+              (ngModelChange)="patch('btnUrl', $event)"
+            />
+          </div>
+        </div>
+      }
+      @if (activeTab === "style") {
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Background</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['bgColor']"
+              (ngModelChange)="patch('bgColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Text Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['textColor']"
+              (ngModelChange)="patch('textColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Button Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['btnColor']"
+              (ngModelChange)="patch('btnColor', $event)"
+            />
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ══════════ CONTACT ══════════ -->
+    @if (section.type === "contact") {
+      @if (activeTab === "content") {
+        <div>
+          <label class="label">Title</label>
+          <input
+            class="input"
+            [ngModel]="d['title']"
+            (ngModelChange)="patch('title', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Subtitle</label>
+          <input
+            class="input"
+            [ngModel]="d['subtitle']"
+            (ngModelChange)="patch('subtitle', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Submit Button Text</label>
+          <input
+            class="input"
+            [ngModel]="d['submitText']"
+            (ngModelChange)="patch('submitText', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">WhatsApp Number</label>
+          <input
+            class="input"
+            placeholder="91XXXXXXXXXX"
+            [ngModel]="d['whatsappNumber']"
+            (ngModelChange)="patch('whatsappNumber', $event)"
+          />
+          <p class="text-xs text-gray-400 mt-1">
+            If set, the submit button will redirect to WhatsApp
+          </p>
+        </div>
+        <div class="space-y-2">
+          <p class="label">Fields</p>
+          @for (
+            field of [
+              ["showName", "Name"],
+              ["showPhone", "Phone"],
+              ["showEmail", "Email"],
+              ["showMessage", "Message"],
+            ];
+            track field[0]
+          ) {
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                class="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                [ngModel]="d[field[0]]"
+                (ngModelChange)="patch(field[0], $event)"
+              />
+              <span class="text-sm text-gray-700">{{ field[1] }}</span>
+            </label>
+          }
+        </div>
+      }
+      @if (activeTab === "style") {
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Background</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['bgColor']"
+              (ngModelChange)="patch('bgColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Button Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['btnColor']"
+              (ngModelChange)="patch('btnColor', $event)"
+            />
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ══════════ TEXT BLOCK ══════════ -->
+    @if (section.type === "text") {
+      @if (activeTab === "content") {
+        <div>
+          <label class="label">Content</label>
+          <textarea
+            class="input resize-none"
+            rows="8"
+            [ngModel]="d['content']"
+            (ngModelChange)="patch('content', $event)"
+          ></textarea>
+        </div>
+      }
+      @if (activeTab === "style") {
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Font Size (px)</label>
+            <input
+              type="number"
+              class="input"
+              [ngModel]="d['fontSize']"
+              (ngModelChange)="patch('fontSize', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Max Width (px)</label>
+            <input
+              type="number"
+              class="input"
+              [ngModel]="d['maxWidth']"
+              (ngModelChange)="patch('maxWidth', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Text Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['color']"
+              (ngModelChange)="patch('color', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Align</label>
+            <select
+              class="input"
+              [ngModel]="d['align']"
+              (ngModelChange)="patch('align', $event)"
+            >
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ══════════ FAQ ══════════ -->
+    @if (section.type === "faq") {
+      @if (activeTab === "content") {
+        <div>
+          <label class="label">Title</label>
+          <input
+            class="input"
+            [ngModel]="d['title']"
+            (ngModelChange)="patch('title', $event)"
+          />
+        </div>
+        @for (item of d["items"]; track $index; let i = $index) {
+          <div class="border border-gray-200 rounded-lg p-3 mb-2 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-medium text-gray-500"
+                >Q{{ i + 1 }}</span
+              >
+              <button
+                (click)="removeItem('items', i)"
+                class="text-red-400 text-xs"
+              >
+                Remove
+              </button>
+            </div>
+            <input
+              class="input text-sm"
+              placeholder="Question"
+              [ngModel]="item.question"
+              (ngModelChange)="patchItem('items', i, 'question', $event)"
+            />
+            <textarea
+              class="input text-sm resize-none"
+              rows="2"
+              placeholder="Answer"
+              [ngModel]="item.answer"
+              (ngModelChange)="patchItem('items', i, 'answer', $event)"
+            ></textarea>
+          </div>
+        }
+        <button
+          (click)="
+            addItem('items', {
+              question: 'New Question?',
+              answer: 'Answer here.',
+            })
+          "
+          class="btn-secondary btn-sm w-full"
+        >
+          + Add FAQ
+        </button>
+      }
+      @if (activeTab === "style") {
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Background</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['bgColor']"
+              (ngModelChange)="patch('bgColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Accent Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['accentColor']"
+              (ngModelChange)="patch('accentColor', $event)"
+            />
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ══════════ CUSTOM HTML ══════════ -->
+    @if (section.type === "custom-html") {
+      <div>
+        <label class="label">HTML / CSS / JS Code</label>
+        <p class="text-xs text-gray-400 mb-2">
+          Paste any HTML. Use &lt;style&gt; for CSS and &lt;script&gt; for
+          JavaScript. Runs inside a sandboxed iframe.
+        </p>
+        <textarea
+          class="input resize-y font-mono text-xs"
+          rows="16"
+          spellcheck="false"
+          [ngModel]="d['html']"
+          (ngModelChange)="patch('html', $event)"
+        ></textarea>
+      </div>
+      <div>
+        <label class="label">Preview Height (px)</label>
+        <input
+          type="number"
+          class="input"
+          min="100"
+          max="2000"
+          [ngModel]="d['height']"
+          (ngModelChange)="patch('height', $event)"
+        />
+      </div>
+      <div>
+        <label class="label">Upload Image</label>
+        <p class="text-xs text-gray-400 mb-2">
+          Upload an image and copy its URL to use in your HTML.
+        </p>
+        <label
+          class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-brand-400 hover:text-brand-500 transition-colors"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+            />
+          </svg>
+          {{ uploading() ? "Uploading..." : "Upload Image" }}
+          <input
+            type="file"
+            accept="image/*"
+            class="hidden"
+            [disabled]="uploading()"
+            (change)="uploadImage($event, '_lastUploadedUrl')"
+          />
+        </label>
+        @if (uploadError()) {
+          <p class="text-xs text-red-500 mt-1">{{ uploadError() }}</p>
+        }
+        @if (d["_lastUploadedUrl"]) {
+          <div
+            class="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-lg space-y-2"
+          >
+            <img
+              [src]="d['_lastUploadedUrl']"
+              class="w-full rounded object-cover h-20"
+            />
+            <div class="flex items-center gap-2">
+              <code
+                class="text-xs text-gray-600 flex-1 truncate bg-white border border-gray-200 rounded px-2 py-1"
+                >{{ d["_lastUploadedUrl"] }}</code
+              >
+              <button
+                (click)="copyToClipboard(d['_lastUploadedUrl'])"
+                class="btn-secondary btn-sm flex-shrink-0"
+              >
+                Copy URL
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ══════════ VIDEO EMBED ══════════ -->
+    @if (section.type === "video-embed") {
+      @if (activeTab === "content") {
+        <div>
+          <label class="label">YouTube or Vimeo URL</label>
+          <input
+            class="input"
+            placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+            [ngModel]="d['url']"
+            (ngModelChange)="patch('url', $event)"
+          />
+          <p class="text-xs text-gray-400 mt-1">
+            Supports youtube.com, youtu.be, YouTube Shorts and vimeo.com links
+          </p>
+        </div>
+        <div>
+          <label class="label">Section Title (optional)</label>
+          <input
+            class="input"
+            placeholder="e.g. Watch the Official Music Video"
+            [ngModel]="d['title']"
+            (ngModelChange)="patch('title', $event)"
+          />
+        </div>
+      }
+      @if (activeTab === "style") {
+        <div>
+          <label class="label">Aspect Ratio</label>
+          <select
+            class="input"
+            [ngModel]="d['aspectRatio']"
+            (ngModelChange)="patch('aspectRatio', $event)"
+          >
+            <option value="16:9">16:9 — Widescreen</option>
+            <option value="9:16">9:16 — Vertical / Shorts</option>
+            <option value="4:3">4:3 — Classic</option>
+            <option value="1:1">1:1 — Square</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Background</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['bgColor']"
+              (ngModelChange)="patch('bgColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Padding Y (px)</label>
+            <input
+              type="number"
+              class="input"
+              [ngModel]="d['paddingY']"
+              (ngModelChange)="patch('paddingY', $event)"
+            />
+          </div>
+        </div>
+        <div>
+          <label class="label">Max Width (px)</label>
+          <input
+            type="number"
+            class="input"
+            [ngModel]="d['maxWidth']"
+            (ngModelChange)="patch('maxWidth', $event)"
+          />
+        </div>
+      }
+    }
+
+    <!-- ══════════ SMART LINK ══════════ -->
+    @if (section.type === "smart-link") {
+      @if (activeTab === "content") {
+        <div>
+          <label class="label">Cover Art</label>
+          <input
+            class="input mb-2"
+            placeholder="https://... or upload below"
+            [ngModel]="d['coverUrl']"
+            (ngModelChange)="patch('coverUrl', $event)"
+          />
+          <label
+            class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-brand-400 hover:text-brand-500 transition-colors"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+              />
+            </svg>
+            {{ uploading() ? "Uploading..." : "Upload Cover Art" }}
+            <input
+              type="file"
+              accept="image/*"
+              class="hidden"
+              [disabled]="uploading()"
+              (change)="uploadImage($event, 'coverUrl')"
+            />
+          </label>
+          @if (uploadError()) {
+            <p class="text-xs text-red-500 mt-1">{{ uploadError() }}</p>
+          }
+          @if (d["coverUrl"]) {
+            <img
+              [src]="d['coverUrl']"
+              class="mt-2 w-full rounded-xl object-cover h-32"
+            />
+          }
+        </div>
+        <div>
+          <label class="label">Track / Album Title</label>
+          <input
+            class="input"
+            [ngModel]="d['title']"
+            (ngModelChange)="patch('title', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Artist Name</label>
+          <input
+            class="input"
+            [ngModel]="d['artist']"
+            (ngModelChange)="patch('artist', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Release Type</label>
+          <select
+            class="input"
+            [ngModel]="d['releaseType']"
+            (ngModelChange)="patch('releaseType', $event)"
+          >
+            <option value="single">Single</option>
+            <option value="album">Album</option>
+            <option value="ep">EP</option>
+            <option value="mixtape">Mixtape</option>
+          </select>
+        </div>
+        <div>
+          <p class="label mb-2">Streaming Links</p>
+          <div class="space-y-2">
+            @for (link of d["links"]; track $index; let i = $index) {
+              <div class="border border-gray-200 rounded-lg p-2.5 space-y-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                    [ngModel]="link.active"
+                    (ngModelChange)="patchItem('links', i, 'active', $event)"
+                  />
+                  <span class="text-sm font-medium text-gray-700">{{
+                    link.label
+                  }}</span>
+                </label>
+                @if (link.active) {
+                  <input
+                    class="input text-xs"
+                    [placeholder]="'https://' + link.platform + '.com/...'"
+                    [ngModel]="link.url"
+                    (ngModelChange)="patchItem('links', i, 'url', $event)"
+                  />
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+      @if (activeTab === "style") {
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Background</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['bgColor']"
+              (ngModelChange)="patch('bgColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Text Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['textColor']"
+              (ngModelChange)="patch('textColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Accent / Cover BG</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['accentColor']"
+              (ngModelChange)="patch('accentColor', $event)"
+            />
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>
