@@ -20,8 +20,41 @@ async function handleCreate(req, res) {
   res.status(201).json(page);
 }
 
+function sanitizePageUpdate(body) {
+  const patch = { ...body };
+  // Validate URL fields — only allow http/https
+  const urlFields = ["pageBgImage", "privacyPolicyUrl", "termsUrl"];
+  for (const field of urlFields) {
+    if (patch[field] !== undefined && patch[field] !== "") {
+      try {
+        const u = new URL(patch[field]);
+        if (u.protocol !== "http:" && u.protocol !== "https:") {
+          delete patch[field];
+        }
+      } catch {
+        delete patch[field]; // malformed URL — drop it
+      }
+    }
+  }
+  // Pixel IDs: alphanumeric, dashes, underscores only
+  const pixelFields = [
+    "fbPixelId",
+    "googleAdsId",
+    "gtmId",
+    "tiktokPixelId",
+    "snapchatPixelId",
+  ];
+  const pixelRe = /^[A-Za-z0-9_\-]{1,80}$/;
+  for (const field of pixelFields) {
+    if (patch[field] !== undefined && patch[field] !== "") {
+      if (!pixelRe.test(String(patch[field]))) delete patch[field];
+    }
+  }
+  return patch;
+}
+
 async function handleUpdate(req, res) {
-  res.json(await updatePage(req.params.id, req.body));
+  res.json(await updatePage(req.params.id, sanitizePageUpdate(req.body)));
 }
 
 async function handlePublish(req, res) {

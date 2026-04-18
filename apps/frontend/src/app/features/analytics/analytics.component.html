@@ -304,6 +304,95 @@
         }
       </div>
 
+      <!-- ── TRACKING PIXELS ───────────────────────────── -->
+      @if (activePixels.length > 0 || activeAffiliates.length > 0) {
+        <div class="card overflow-hidden">
+          <div
+            class="px-5 py-4 border-b border-gray-100 flex items-center justify-between"
+          >
+            <h2 class="text-sm font-semibold text-gray-700">
+              Tracking & Integrations
+            </h2>
+            <span class="text-xs text-gray-400">Active on this page</span>
+          </div>
+
+          <div class="p-5 space-y-5">
+            @if (activePixels.length > 0) {
+              <div>
+                <p
+                  class="text-xs text-gray-400 font-medium uppercase tracking-wide mb-3"
+                >
+                  Retargeting Pixels
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  @for (px of activePixels; track px.name) {
+                    <a
+                      [href]="px.dashboardUrl"
+                      target="_blank"
+                      rel="noopener"
+                      class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-brand-200 hover:bg-brand-50 transition-colors group"
+                    >
+                      <div
+                        class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                        [style.background-color]="px.color"
+                        [style.color]="px.color === '#FFFC00' ? '#000' : '#fff'"
+                      >
+                        {{ px.icon }}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-800">
+                          {{ px.name }}
+                        </p>
+                        <p class="text-xs text-gray-400 font-mono truncate">
+                          {{ px.id }}
+                        </p>
+                      </div>
+                      <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <span
+                          class="w-1.5 h-1.5 rounded-full bg-green-400"
+                        ></span>
+                        <span class="text-xs text-green-600 font-medium"
+                          >Active</span
+                        >
+                      </div>
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+
+            @if (activeAffiliates.length > 0) {
+              <div>
+                <p
+                  class="text-xs text-gray-400 font-medium uppercase tracking-wide mb-3"
+                >
+                  Affiliate Programs
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  @for (aff of activeAffiliates; track aff.name) {
+                    <div
+                      class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-100"
+                    >
+                      <span
+                        class="w-2 h-2 rounded-full flex-shrink-0"
+                        [style.background-color]="aff.color"
+                      ></span>
+                      <span class="text-sm font-medium text-gray-700">{{
+                        aff.name
+                      }}</span>
+                      <code
+                        class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded font-mono"
+                        >{{ aff.code }}</code
+                      >
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
       <!-- ── DEVICE + EXTRA ──────────────────────────── -->
       @if (data()!.ga4Data) {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-8">

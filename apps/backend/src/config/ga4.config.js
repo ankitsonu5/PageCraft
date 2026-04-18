@@ -1,7 +1,12 @@
 const { AnalyticsAdminServiceClient } = require("@google-analytics/admin");
 const { BetaAnalyticsDataClient } = require("@google-analytics/data");
+const path = require("path");
 
-const keyFilename = process.env.GA4_SERVICE_ACCOUNT_KEY_PATH;
+// __dirname = apps/backend/src/config  →  ../../../../ = project root
+const keyFilename = path.resolve(
+  __dirname,
+  "../../../../secrets/ga4-service-account.json",
+);
 
 const adminClient = new AnalyticsAdminServiceClient({ keyFilename });
 const dataClient = new BetaAnalyticsDataClient({ keyFilename });

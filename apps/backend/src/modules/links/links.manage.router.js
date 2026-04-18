@@ -16,6 +16,15 @@ router.get("/", async (req, res) => {
   res.json(links);
 });
 
+function isValidHttpUrl(str) {
+  try {
+    const u = new URL(str);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 // POST /api/links
 router.post("/", async (req, res) => {
   const { pageId, label, targetUrl } = req.body;
@@ -23,6 +32,11 @@ router.post("/", async (req, res) => {
     return res
       .status(400)
       .json({ error: "pageId, label, and targetUrl required" });
+  }
+  if (!isValidHttpUrl(targetUrl)) {
+    return res
+      .status(400)
+      .json({ error: "targetUrl must be a valid http/https URL" });
   }
 
   const slug = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;

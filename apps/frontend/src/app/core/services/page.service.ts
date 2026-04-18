@@ -19,6 +19,22 @@ export interface Page {
   updatedAt: string;
   linkTrackers?: LinkTracker[];
   project?: { metaPixelId?: string };
+  // Background
+  pageBgColor?: string;
+  pageBgImage?: string;
+  // Pixels
+  fbPixelId?: string;
+  googleAdsId?: string;
+  gtmId?: string;
+  tiktokPixelId?: string;
+  snapchatPixelId?: string;
+  // Legal
+  privacyPolicyUrl?: string;
+  termsUrl?: string;
+  // Affiliate
+  appleAffCode?: string;
+  amazonAffCode?: string;
+  spotifyAffCode?: string;
 }
 
 export interface Section {

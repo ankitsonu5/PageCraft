@@ -8,6 +8,15 @@ export interface AnalyticsData {
     title: string;
     projectId: string;
     ga4PropertyId?: string;
+    ga4MeasurementId?: string;
+    fbPixelId?: string;
+    googleAdsId?: string;
+    gtmId?: string;
+    tiktokPixelId?: string;
+    snapchatPixelId?: string;
+    appleAffCode?: string;
+    amazonAffCode?: string;
+    spotifyAffCode?: string;
   };
   ga4Data: {
     summary: { value: string }[];

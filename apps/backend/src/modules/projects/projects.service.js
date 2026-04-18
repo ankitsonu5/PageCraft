@@ -2,17 +2,34 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
+const SAFE_PROJECT_FIELDS = {
+  id: true,
+  name: true,
+  slug: true,
+  description: true,
+  color: true,
+  logo: true,
+  createdAt: true,
+  updatedAt: true,
+  metaPixelId: true, // public pixel ID is fine
+  klaviyoListId: true, // list ID is fine
+  // metaCapiToken and klaviyoApiKey are NEVER sent to client
+};
+
 async function listProjects() {
   return prisma.project.findMany({
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { pages: true } } },
+    select: { ...SAFE_PROJECT_FIELDS, _count: { select: { pages: true } } },
   });
 }
 
 async function getProject(id) {
   const project = await prisma.project.findUnique({
     where: { id },
-    include: {
+    select: {
+      ...SAFE_PROJECT_FIELDS,
+      defaultHeader: true,
+      defaultFooter: true,
       pages: {
         orderBy: { createdAt: "desc" },
         select: {
@@ -46,33 +63,23 @@ async function createProject(data) {
 }
 
 async function updateProject(id, data) {
-  const {
-    name,
-    description,
-    color,
-    logo,
-    defaultHeader,
-    defaultFooter,
-    metaPixelId,
-    metaCapiToken,
-    klaviyoApiKey,
-    klaviyoListId,
-  } = data;
-  return prisma.project.update({
-    where: { id },
-    data: {
-      name,
-      description,
-      color,
-      logo,
-      defaultHeader,
-      defaultFooter,
-      metaPixelId,
-      metaCapiToken,
-      klaviyoApiKey,
-      klaviyoListId,
-    },
-  });
+  const allowed = [
+    "name",
+    "description",
+    "color",
+    "logo",
+    "defaultHeader",
+    "defaultFooter",
+    "metaPixelId",
+    "metaCapiToken",
+    "klaviyoApiKey",
+    "klaviyoListId",
+  ];
+  const patch = {};
+  for (const key of allowed) {
+    if (key in data) patch[key] = data[key];
+  }
+  return prisma.project.update({ where: { id }, data: patch });
 }
 
 async function deleteProject(id) {

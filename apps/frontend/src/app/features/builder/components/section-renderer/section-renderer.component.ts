@@ -18,6 +18,11 @@ import { Section } from "../../../../core/services/page.service";
 export class SectionRendererComponent {
   @Input() section!: Section;
   @Input() pageId = "";
+  @Input() affiliateCodes: {
+    apple?: string;
+    amazon?: string;
+    spotify?: string;
+  } = {};
 
   // Fan gate state
   fanEmail = signal("");
@@ -137,6 +142,24 @@ export class SectionRendererComponent {
 
   platformColor(platform: string): string {
     return this.platformMeta[platform]?.color ?? "#fff";
+  }
+
+  /** Append affiliate/tracking params to platform URLs when codes are set. */
+  getAffiliateUrl(platform: string, url: string): string {
+    if (!url) return url;
+    try {
+      const u = new URL(url);
+      if (platform === "spotify" && this.affiliateCodes.spotify) {
+        u.searchParams.set("si", this.affiliateCodes.spotify);
+      } else if (platform === "apple" && this.affiliateCodes.apple) {
+        u.searchParams.set("at", this.affiliateCodes.apple);
+      } else if (platform === "amazon" && this.affiliateCodes.amazon) {
+        u.searchParams.set("tag", this.affiliateCodes.amazon);
+      }
+      return u.toString();
+    } catch {
+      return url;
+    }
   }
 
   // ─── Footer Social ─────────────────────────────────

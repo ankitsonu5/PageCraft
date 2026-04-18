@@ -41,7 +41,25 @@ async function createPage(data) {
 }
 
 async function updatePage(id, data) {
-  const { title, sections, metaTitle, metaDescription, slug } = data;
+  const {
+    title,
+    sections,
+    metaTitle,
+    metaDescription,
+    slug,
+    pageBgColor,
+    pageBgImage,
+    fbPixelId,
+    googleAdsId,
+    gtmId,
+    tiktokPixelId,
+    snapchatPixelId,
+    privacyPolicyUrl,
+    termsUrl,
+    appleAffCode,
+    amazonAffCode,
+    spotifyAffCode,
+  } = data;
   return prisma.page.update({
     where: { id },
     data: {
@@ -50,6 +68,18 @@ async function updatePage(id, data) {
       ...(metaTitle !== undefined && { metaTitle }),
       ...(metaDescription !== undefined && { metaDescription }),
       ...(slug !== undefined && { slug }),
+      ...(pageBgColor !== undefined && { pageBgColor }),
+      ...(pageBgImage !== undefined && { pageBgImage }),
+      ...(fbPixelId !== undefined && { fbPixelId }),
+      ...(googleAdsId !== undefined && { googleAdsId }),
+      ...(gtmId !== undefined && { gtmId }),
+      ...(tiktokPixelId !== undefined && { tiktokPixelId }),
+      ...(snapchatPixelId !== undefined && { snapchatPixelId }),
+      ...(privacyPolicyUrl !== undefined && { privacyPolicyUrl }),
+      ...(termsUrl !== undefined && { termsUrl }),
+      ...(appleAffCode !== undefined && { appleAffCode }),
+      ...(amazonAffCode !== undefined && { amazonAffCode }),
+      ...(spotifyAffCode !== undefined && { spotifyAffCode }),
     },
   });
 }

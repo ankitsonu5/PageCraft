@@ -181,6 +181,80 @@ export class AnalyticsComponent implements OnInit {
     return Math.round((Number(row.metricValues[0].value) / total) * 100);
   }
 
+  get activePixels(): {
+    name: string;
+    id: string;
+    dashboardUrl: string;
+    color: string;
+    icon: string;
+  }[] {
+    const p = this.data()?.page;
+    if (!p) return [];
+    const list = [
+      {
+        key: "fbPixelId",
+        name: "Meta (FB) Pixel",
+        color: "#1877F2",
+        icon: "M",
+        dashboardUrl: "https://business.facebook.com/events_manager",
+      },
+      {
+        key: "googleAdsId",
+        name: "Google Ads",
+        color: "#4285F4",
+        icon: "G",
+        dashboardUrl: "https://ads.google.com",
+      },
+      {
+        key: "gtmId",
+        name: "Google Tag Manager",
+        color: "#246FDB",
+        icon: "T",
+        dashboardUrl: "https://tagmanager.google.com",
+      },
+      {
+        key: "tiktokPixelId",
+        name: "TikTok Pixel",
+        color: "#010101",
+        icon: "♪",
+        dashboardUrl: "https://ads.tiktok.com/i18n/events_manager",
+      },
+      {
+        key: "snapchatPixelId",
+        name: "Snapchat Pixel",
+        color: "#FFFC00",
+        icon: "S",
+        dashboardUrl: "https://ads.snapchat.com/pixels",
+      },
+    ] as const;
+    return list
+      .filter((item) => !!(p as any)[item.key])
+      .map((item) => ({
+        name: item.name,
+        id: (p as any)[item.key],
+        dashboardUrl: item.dashboardUrl,
+        color: item.color,
+        icon: item.icon,
+      }));
+  }
+
+  get activeAffiliates(): { name: string; code: string; color: string }[] {
+    const p = this.data()?.page;
+    if (!p) return [];
+    const list = [
+      { key: "spotifyAffCode", name: "Spotify", color: "#1DB954" },
+      { key: "appleAffCode", name: "Apple Music", color: "#fc3c44" },
+      { key: "amazonAffCode", name: "Amazon Music", color: "#FF9900" },
+    ] as const;
+    return list
+      .filter((item) => !!(p as any)[item.key])
+      .map((item) => ({
+        name: item.name,
+        code: (p as any)[item.key],
+        color: item.color,
+      }));
+  }
+
   exportCsv() {
     const links = this.data()?.links;
     if (!links?.length) return;

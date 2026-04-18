@@ -8,18 +8,40 @@ const { addToKlaviyoList } = require("../../utils/klaviyo.util");
 const router = express.Router();
 const prisma = new PrismaClient();
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 // POST /api/leads  — public, fan email submit from published page
 router.post("/", async (req, res) => {
   const { pageId, email, name, platform, source } = req.body;
+
   if (!pageId || !email) {
     return res.status(400).json({ error: "pageId and email are required" });
   }
+  if (typeof email !== "string" || !EMAIL_RE.test(email.trim())) {
+    return res.status(400).json({ error: "Invalid email address" });
+  }
+  if (name && (typeof name !== "string" || name.length > 120)) {
+    return res.status(400).json({ error: "Invalid name" });
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
 
   const page = await prisma.page.findUnique({
     where: { id: pageId },
     include: { project: true },
   });
-  if (!page) return res.status(404).json({ error: "Page not found" });
+  if (!page || !page.isPublished) {
+    return res.status(404).json({ error: "Page not found" });
+  }
+
+  // Duplicate: same email + page → silently succeed (don't expose existence)
+  const existing = await prisma.fanLead.findFirst({
+    where: { pageId, email: normalizedEmail },
+    select: { id: true },
+  });
+  if (existing) {
+    return res.json({ success: true, message: "Subscribed successfully" });
+  }
 
   const ip =
     (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.ip;
@@ -31,10 +53,10 @@ router.post("/", async (req, res) => {
     data: {
       pageId,
       projectId: page.projectId,
-      email,
-      name: name || null,
-      platform: platform || null,
-      source: source || "direct",
+      email: normalizedEmail,
+      name: name ? String(name).slice(0, 120) : null,
+      platform: platform ? String(platform).slice(0, 50) : null,
+      source: source ? String(source).slice(0, 50) : "direct",
       city: geo?.city || null,
       country: geo?.country || null,
       device,
@@ -50,7 +72,7 @@ router.post("/", async (req, res) => {
     pixelId: metaPixelId,
     accessToken: metaCapiToken,
     eventName: "Lead",
-    email,
+    email: normalizedEmail,
     pageUrl: `${process.env.APP_BASE_URL}/p/${page.slug}`,
     clientIp: ip,
     clientUserAgent: req.headers["user-agent"],
@@ -60,7 +82,7 @@ router.post("/", async (req, res) => {
   addToKlaviyoList({
     apiKey: klaviyoApiKey,
     listId: klaviyoListId,
-    email,
+    email: normalizedEmail,
     name,
     source,
     platform,

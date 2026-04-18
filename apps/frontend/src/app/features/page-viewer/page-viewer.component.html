@@ -35,9 +35,17 @@
 }
 
 @if (!loading && !notFound && page) {
-  <div class="bg-white">
+  <div id="page-viewer-wrapper" class="min-h-screen bg-white">
     @for (section of page.sections; track section.id) {
-      <app-section-renderer [section]="section" [pageId]="page.id" />
+      <app-section-renderer
+        [section]="section"
+        [pageId]="page.id"
+        [affiliateCodes]="{
+          apple: page.appleAffCode,
+          amazon: page.amazonAffCode,
+          spotify: page.spotifyAffCode,
+        }"
+      />
     }
   </div>
 }

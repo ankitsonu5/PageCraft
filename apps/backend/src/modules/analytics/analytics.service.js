@@ -30,6 +30,14 @@ async function getAnalytics(pageId, period = "30d") {
       id: true,
       title: true,
       projectId: true,
+      fbPixelId: true,
+      googleAdsId: true,
+      gtmId: true,
+      tiktokPixelId: true,
+      snapchatPixelId: true,
+      appleAffCode: true,
+      amazonAffCode: true,
+      spotifyAffCode: true,
     },
   });
   if (!page) throw { status: 404, message: "Page not found" };

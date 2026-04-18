@@ -531,7 +531,7 @@
         <div class="w-full space-y-3">
           @for (link of activeLinks; track link.platform) {
             <a
-              [href]="link.url"
+              [href]="getAffiliateUrl(link.platform, link.url)"
               target="_blank"
               rel="noopener"
               class="flex items-center gap-3 w-full px-5 py-3.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"

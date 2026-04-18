@@ -247,35 +247,250 @@
           </div>
         </div>
       } @else if (railTab() === "settings") {
-        <div class="p-4 space-y-4">
-          <p
-            class="text-xs font-semibold text-gray-400 uppercase tracking-wider"
+        <div class="p-4 space-y-5 overflow-y-auto">
+          <!-- Save button -->
+          <button
+            (click)="savePageSettings()"
+            class="w-full btn-primary btn-sm"
+            [disabled]="savingSettings()"
           >
-            Page Settings
-          </p>
+            @if (settingsSaved()) {
+              ✓ Saved!
+            } @else if (savingSettings()) {
+              Saving...
+            } @else {
+              Save Settings
+            }
+          </button>
+
+          <!-- SEO -->
           <div>
-            <label class="label">Meta Title</label>
-            <input type="text" class="input" placeholder="SEO title" />
+            <p
+              class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"
+            >
+              SEO
+            </p>
+            <div class="space-y-3">
+              <div>
+                <label class="label">URL Slug</label>
+                <div class="flex items-center gap-1">
+                  <span class="text-xs text-gray-400">/p/</span>
+                  <input
+                    type="text"
+                    class="input text-xs"
+                    [ngModel]="pageSlug()"
+                    (ngModelChange)="pageSlug.set($event)"
+                    name="pageSlug"
+                  />
+                </div>
+              </div>
+              <div>
+                <label class="label">Meta Title</label>
+                <input
+                  type="text"
+                  class="input"
+                  placeholder="Page title for Google"
+                  [ngModel]="pageSettings().metaTitle"
+                  (ngModelChange)="patchSettings('metaTitle', $event)"
+                  name="metaTitle"
+                />
+              </div>
+              <div>
+                <label class="label">Meta Description</label>
+                <textarea
+                  class="input resize-none"
+                  rows="2"
+                  placeholder="Short description for search engines"
+                  [ngModel]="pageSettings().metaDescription"
+                  (ngModelChange)="patchSettings('metaDescription', $event)"
+                  name="metaDesc"
+                ></textarea>
+              </div>
+            </div>
           </div>
+
+          <!-- Background -->
           <div>
-            <label class="label">Meta Description</label>
-            <textarea
-              class="input resize-none"
-              rows="3"
-              placeholder="SEO description"
-            ></textarea>
+            <p
+              class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"
+            >
+              Background
+            </p>
+            <div class="space-y-3">
+              <div>
+                <label class="label">Background Color</label>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="color"
+                    class="h-9 w-12 rounded border border-gray-200 cursor-pointer p-0.5"
+                    [ngModel]="pageSettings().pageBgColor || '#ffffff'"
+                    (ngModelChange)="patchSettings('pageBgColor', $event)"
+                    name="pageBgColor"
+                  />
+                  <input
+                    type="text"
+                    class="input flex-1 text-xs"
+                    placeholder="#ffffff"
+                    [ngModel]="pageSettings().pageBgColor"
+                    (ngModelChange)="patchSettings('pageBgColor', $event)"
+                    name="pageBgColorText"
+                  />
+                </div>
+              </div>
+              <div>
+                <label class="label">Background Image URL</label>
+                <input
+                  type="text"
+                  class="input text-xs"
+                  placeholder="https://... or /uploads/..."
+                  [ngModel]="pageSettings().pageBgImage"
+                  (ngModelChange)="patchSettings('pageBgImage', $event)"
+                  name="pageBgImage"
+                />
+              </div>
+            </div>
           </div>
+
+          <!-- Retargeting Pixels -->
           <div>
-            <label class="label">URL Slug</label>
-            <div class="flex items-center gap-1">
-              <span class="text-xs text-gray-400">/p/</span>
-              <input
-                type="text"
-                class="input text-xs"
-                [ngModel]="pageSlug()"
-                (ngModelChange)="pageSlug.set($event)"
-                name="pageSlug"
-              />
+            <p
+              class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"
+            >
+              Retargeting Pixels
+            </p>
+            <div class="space-y-3">
+              <div>
+                <label class="label">Facebook Pixel ID</label>
+                <input
+                  type="text"
+                  class="input text-xs"
+                  placeholder="e.g. 1234567890"
+                  [ngModel]="pageSettings().fbPixelId"
+                  (ngModelChange)="patchSettings('fbPixelId', $event)"
+                  name="fbPixelId"
+                />
+              </div>
+              <div>
+                <label class="label">Google Ads Remarketing ID</label>
+                <input
+                  type="text"
+                  class="input text-xs"
+                  placeholder="e.g. AW-XXXXXXXXX"
+                  [ngModel]="pageSettings().googleAdsId"
+                  (ngModelChange)="patchSettings('googleAdsId', $event)"
+                  name="googleAdsId"
+                />
+              </div>
+              <div>
+                <label class="label">Google Tag Manager</label>
+                <input
+                  type="text"
+                  class="input text-xs"
+                  placeholder="e.g. GTM-XXXXXX"
+                  [ngModel]="pageSettings().gtmId"
+                  (ngModelChange)="patchSettings('gtmId', $event)"
+                  name="gtmId"
+                />
+              </div>
+              <div>
+                <label class="label">TikTok Pixel</label>
+                <input
+                  type="text"
+                  class="input text-xs"
+                  placeholder="TikTok pixel ID"
+                  [ngModel]="pageSettings().tiktokPixelId"
+                  (ngModelChange)="patchSettings('tiktokPixelId', $event)"
+                  name="tiktokPixelId"
+                />
+              </div>
+              <div>
+                <label class="label">Snapchat Pixel</label>
+                <input
+                  type="text"
+                  class="input text-xs"
+                  placeholder="Snapchat pixel ID"
+                  [ngModel]="pageSettings().snapchatPixelId"
+                  (ngModelChange)="patchSettings('snapchatPixelId', $event)"
+                  name="snapchatPixelId"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Affiliate Programs -->
+          <div>
+            <p
+              class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"
+            >
+              Affiliate Programs
+            </p>
+            <div class="space-y-3">
+              <div>
+                <label class="label">Apple Affiliate Code</label>
+                <input
+                  type="text"
+                  class="input text-xs"
+                  placeholder="Apple affiliate token"
+                  [ngModel]="pageSettings().appleAffCode"
+                  (ngModelChange)="patchSettings('appleAffCode', $event)"
+                  name="appleAff"
+                />
+              </div>
+              <div>
+                <label class="label">Amazon Affiliate Code</label>
+                <input
+                  type="text"
+                  class="input text-xs"
+                  placeholder="tag=XXXXXXX-20"
+                  [ngModel]="pageSettings().amazonAffCode"
+                  (ngModelChange)="patchSettings('amazonAffCode', $event)"
+                  name="amazonAff"
+                />
+              </div>
+              <div>
+                <label class="label">Spotify Affiliate Code</label>
+                <input
+                  type="text"
+                  class="input text-xs"
+                  placeholder="Spotify affiliate ID"
+                  [ngModel]="pageSettings().spotifyAffCode"
+                  (ngModelChange)="patchSettings('spotifyAffCode', $event)"
+                  name="spotifyAff"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Legal -->
+          <div>
+            <p
+              class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"
+            >
+              Legal
+            </p>
+            <div class="space-y-3">
+              <div>
+                <label class="label">Privacy Policy URL</label>
+                <input
+                  type="text"
+                  class="input text-xs"
+                  placeholder="https://..."
+                  [ngModel]="pageSettings().privacyPolicyUrl"
+                  (ngModelChange)="patchSettings('privacyPolicyUrl', $event)"
+                  name="privacyUrl"
+                />
+              </div>
+              <div>
+                <label class="label">Terms of Service URL</label>
+                <input
+                  type="text"
+                  class="input text-xs"
+                  placeholder="https://..."
+                  [ngModel]="pageSettings().termsUrl"
+                  (ngModelChange)="patchSettings('termsUrl', $event)"
+                  name="termsUrl"
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -65,6 +65,26 @@ export class BuilderComponent implements OnInit, OnDestroy {
   savingDefault = signal(false);
   savedDefaultType = signal<"header" | "footer" | null>(null);
 
+  // Page advanced settings
+  pageSettings = signal({
+    metaTitle: "",
+    metaDescription: "",
+    pageBgColor: "",
+    pageBgImage: "",
+    fbPixelId: "",
+    googleAdsId: "",
+    gtmId: "",
+    tiktokPixelId: "",
+    snapchatPixelId: "",
+    privacyPolicyUrl: "",
+    termsUrl: "",
+    appleAffCode: "",
+    amazonAffCode: "",
+    spotifyAffCode: "",
+  });
+  savingSettings = signal(false);
+  settingsSaved = signal(false);
+
   elements = SECTION_ELEMENTS;
   templates = TEMPLATES;
 
@@ -105,6 +125,23 @@ export class BuilderComponent implements OnInit, OnDestroy {
       this.pageSlug.set(page.slug);
       this.projectId.set(page.projectId);
       this.sections.set((page.sections as Section[]) || []);
+      // load saved page settings
+      this.pageSettings.set({
+        metaTitle: page.metaTitle || "",
+        metaDescription: page.metaDescription || "",
+        pageBgColor: page.pageBgColor || "",
+        pageBgImage: page.pageBgImage || "",
+        fbPixelId: page.fbPixelId || "",
+        googleAdsId: page.googleAdsId || "",
+        gtmId: page.gtmId || "",
+        tiktokPixelId: page.tiktokPixelId || "",
+        snapchatPixelId: page.snapchatPixelId || "",
+        privacyPolicyUrl: page.privacyPolicyUrl || "",
+        termsUrl: page.termsUrl || "",
+        appleAffCode: page.appleAffCode || "",
+        amazonAffCode: page.amazonAffCode || "",
+        spotifyAffCode: page.spotifyAffCode || "",
+      });
       // load project for header/footer defaults
       this.projectService.get(page.projectId).subscribe((proj) => {
         this.project.set(proj);
@@ -207,6 +244,25 @@ export class BuilderComponent implements OnInit, OnDestroy {
     if (!h.length) return;
     this.sections.set(h[h.length - 1]);
     this.history.update((h) => h.slice(0, -1));
+  }
+
+  patchSettings(field: string, value: string) {
+    this.pageSettings.update((s) => ({ ...s, [field]: value }));
+  }
+
+  savePageSettings() {
+    if (!this.pageId()) return;
+    this.savingSettings.set(true);
+    this.pageService
+      .update(this.pageId()!, this.pageSettings() as never)
+      .subscribe({
+        next: () => {
+          this.savingSettings.set(false);
+          this.settingsSaved.set(true);
+          setTimeout(() => this.settingsSaved.set(false), 2500);
+        },
+        error: () => this.savingSettings.set(false),
+      });
   }
 
   saveAsProjectDefault(type: "header" | "footer") {

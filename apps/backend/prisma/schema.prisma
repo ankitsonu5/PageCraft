@@ -50,6 +50,22 @@ model Page {
   ga4StreamId      String?
   metaTitle        String?
   metaDescription  String?
+  // Background
+  pageBgColor      String?
+  pageBgImage      String?
+  // Retargeting Pixels
+  fbPixelId        String?
+  googleAdsId      String?
+  gtmId            String?
+  tiktokPixelId    String?
+  snapchatPixelId  String?
+  // Legal
+  privacyPolicyUrl String?
+  termsUrl         String?
+  // Affiliate
+  appleAffCode     String?
+  amazonAffCode    String?
+  spotifyAffCode   String?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   linkTrackers     LinkTracker[]

@@ -23,6 +23,18 @@ router.get("/pages/:slug", async (req, res) => {
       project: {
         select: { metaPixelId: true },
       },
+      pageBgColor: true,
+      pageBgImage: true,
+      fbPixelId: true,
+      googleAdsId: true,
+      gtmId: true,
+      tiktokPixelId: true,
+      snapchatPixelId: true,
+      privacyPolicyUrl: true,
+      termsUrl: true,
+      appleAffCode: true,
+      amazonAffCode: true,
+      spotifyAffCode: true,
     },
   });
 

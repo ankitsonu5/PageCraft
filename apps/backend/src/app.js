@@ -3,6 +3,7 @@ require("express-async-errors");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
@@ -61,7 +62,25 @@ app.use(
 
 app.use(express.json({ limit: "10mb" }));
 
+// ─── RATE LIMITERS ───────────────────────────────
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  message: { error: "Too many login attempts. Try again in 15 minutes." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const leadsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: "Too many submissions. Please wait before trying again." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // ─── PUBLIC ROUTES ────────────────────────────────
+app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth", authRouter);
 app.use("/t", linksRouter);
 app.use("/api/public", pagesPublicRouter);
@@ -72,7 +91,7 @@ app.use("/api/projects", authMiddleware, projectsRouter);
 app.use("/api/pages", authMiddleware, pagesRouter);
 app.use("/api/analytics", authMiddleware, analyticsRouter);
 app.use("/api/links", authMiddleware, linksManageRouter);
-app.use("/api/leads", leadsRouter);
+app.use("/api/leads", leadsLimiter, leadsRouter);
 app.use("/api/leads/manage", authMiddleware, leadsManageRouter);
 
 app.post("/api/upload", authMiddleware, upload.single("file"), (req, res) => {
