@@ -5,7 +5,7 @@ require("dotenv").config({ path: __dirname + "/../../../apps/backend/.env" });
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = process.env.ADMIN_EMAIL || "admin@pagepulse.in";
+  const email = process.env.ADMIN_EMAIL || "admin@pagecraft.in";
   const password = process.env.ADMIN_PASSWORD || "changeme123";
   const hash = await bcrypt.hash(password, 10);
 
@@ -19,13 +19,13 @@ async function main() {
 
   // Demo project
   const project = await prisma.project.upsert({
-    where: { slug: "pimf-hospital" },
+    where: { slug: "my-first-project" },
     update: {},
     create: {
-      name: "PIMF Hospital",
-      slug: "pimf-hospital",
-      description: "PIMF Hospital landing pages",
-      color: "#0ea5e9",
+      name: "My First Project",
+      slug: "my-first-project",
+      description: "PageCraft demo project",
+      color: "#534AB7",
     },
   });
 
