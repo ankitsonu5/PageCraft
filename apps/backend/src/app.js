@@ -20,6 +20,7 @@ const leadsRouter = require("./modules/leads/leads.router");
 const leadsManageRouter = require("./modules/leads/leads.manage.router");
 
 const app = express();
+app.set("trust proxy", 1); // Nginx proxy ke peeche chal raha hai
 
 // ─── FILE UPLOAD SETUP ────────────────────────────
 const uploadsDir = path.join(__dirname, "../../uploads");
