@@ -4,6 +4,7 @@ const UAParser = require("ua-parser-js");
 const { PrismaClient } = require("@prisma/client");
 const { sendCAPIEvent } = require("../../utils/meta-capi.util");
 const { addToKlaviyoList } = require("../../utils/klaviyo.util");
+const { sendLeadNotification } = require("../../utils/mailer.util");
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -77,6 +78,20 @@ router.post("/", async (req, res) => {
     clientIp: ip,
     clientUserAgent: req.headers["user-agent"],
   }).catch(() => {});
+
+  // Email notification to admin (fire and forget)
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
+    sendLeadNotification({
+      adminEmail,
+      pageTitle: page.title,
+      pageSlug: page.slug,
+      leadEmail: normalizedEmail,
+      leadName: name,
+      country: geo?.country,
+      device,
+    }).catch(() => {});
+  }
 
   // Klaviyo sync (fire and forget, then update flag)
   addToKlaviyoList({

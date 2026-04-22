@@ -681,3 +681,85 @@
     </div>
   </section>
 }
+
+<!-- ─── PRE-SAVE ──────────────────────────────────────────────────── -->
+@if (section.type === "pre-save") {
+  <section
+    [style.background-color]="d['bgColor']"
+    [style.color]="d['textColor']"
+    [style.padding-top.px]="d['paddingY'] || 80"
+    [style.padding-bottom.px]="d['paddingY'] || 80"
+    class="px-6"
+  >
+    <div class="max-w-sm mx-auto flex flex-col items-center gap-6 text-center">
+      @if (d["coverUrl"]) {
+        <img
+          [src]="d['coverUrl']"
+          alt="Cover"
+          class="w-48 h-48 rounded-2xl object-cover shadow-2xl"
+        />
+      } @else {
+        <div
+          class="w-48 h-48 rounded-2xl flex items-center justify-center text-5xl shadow-2xl"
+          [style.background-color]="d['accentColor']"
+        >
+          💿
+        </div>
+      }
+      @if (d["releaseDate"]) {
+        <p class="text-xs font-semibold uppercase tracking-widest opacity-60">
+          Dropping {{ d["releaseDate"] }}
+        </p>
+      }
+      <div>
+        <h2 class="text-2xl font-bold leading-tight">{{ d["title"] }}</h2>
+        <p class="text-base opacity-70 mt-1">{{ d["artist"] }}</p>
+      </div>
+      <h3 class="text-3xl font-bold">{{ d["headline"] }}</h3>
+      <p class="opacity-80 leading-relaxed">{{ d["subtext"] }}</p>
+      <div class="w-full space-y-3">
+        @if (d["spotifyUrl"]) {
+          <a
+            [href]="d['spotifyUrl']"
+            target="_blank"
+            rel="noopener"
+            class="flex items-center justify-center gap-3 w-full px-5 py-3.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
+            style="background: #1db954; color: #fff"
+          >
+            🎵 Pre-Save on Spotify
+          </a>
+        }
+        @if (d["appleUrl"]) {
+          <a
+            [href]="d['appleUrl']"
+            target="_blank"
+            rel="noopener"
+            class="flex items-center justify-center gap-3 w-full px-5 py-3.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
+            style="background: #fc3c44; color: #fff"
+          >
+            🎵 Pre-Add on Apple Music
+          </a>
+        }
+        @if (d["amazonUrl"]) {
+          <a
+            [href]="d['amazonUrl']"
+            target="_blank"
+            rel="noopener"
+            class="flex items-center justify-center gap-3 w-full px-5 py-3.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
+            style="background: #ff9900; color: #fff"
+          >
+            🎵 Pre-Save on Amazon Music
+          </a>
+        }
+        @if (!d["spotifyUrl"] && !d["appleUrl"] && !d["amazonUrl"]) {
+          <div
+            class="flex items-center justify-center w-full px-5 py-3.5 rounded-xl font-semibold text-sm opacity-40"
+            [style.background-color]="d['accentColor']"
+          >
+            🎵 {{ d["btnText"] || "Pre-Save Now" }}
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+}

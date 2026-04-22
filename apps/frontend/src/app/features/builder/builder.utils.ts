@@ -12,6 +12,7 @@ export type SectionType =
   | "video-embed"
   | "smart-link"
   | "email-fan-gate"
+  | "pre-save"
   | "header"
   | "footer";
 
@@ -239,6 +240,25 @@ export function getDefaultData(type: SectionType): Record<string, unknown> {
         btnTextColor: "#ffffff",
         paddingY: "80",
       };
+    case "pre-save":
+      return {
+        coverUrl: "",
+        title: "Track Title",
+        artist: "Artist Name",
+        releaseDate: "",
+        headline: "Pre-Save Now",
+        subtext:
+          "Be the first to listen. Pre-save and get notified the moment it drops.",
+        spotifyUrl: "",
+        appleUrl: "",
+        amazonUrl: "",
+        btnText: "Pre-Save on Spotify",
+        successMessage: "You're on the list! 🎶",
+        bgColor: "#0f0f0f",
+        textColor: "#ffffff",
+        accentColor: "#1DB954",
+        paddingY: "80",
+      };
     case "header":
       return {
         logoType: "text",
@@ -314,6 +334,7 @@ export const SECTION_ELEMENTS = [
   },
   { type: "video-embed", label: "Video Embed", icon: "▶", category: "MEDIA" },
   { type: "smart-link", label: "Smart Link", icon: "🎵", category: "MUSIC" },
+  { type: "pre-save", label: "Pre-Save", icon: "💿", category: "MUSIC" },
   {
     type: "custom-html",
     label: "Custom HTML",
@@ -347,5 +368,53 @@ export const TEMPLATES = [
     label: "Event / Promotion",
     icon: "🎉",
     sections: ["hero", "stats", "cta", "contact"],
+  },
+  {
+    label: "Album / EP Release",
+    icon: "💿",
+    sections: [
+      "header",
+      "hero",
+      "smart-link",
+      "image-text",
+      "email-fan-gate",
+      "footer",
+    ],
+  },
+  {
+    label: "Pre-Save Campaign",
+    icon: "🔔",
+    sections: ["header", "pre-save", "email-fan-gate", "footer"],
+  },
+  {
+    label: "Fan Community",
+    icon: "🫶",
+    sections: ["hero", "stats", "testimonials", "email-fan-gate", "faq"],
+  },
+  {
+    label: "Tour / Concert",
+    icon: "🎤",
+    sections: [
+      "header",
+      "hero",
+      "features",
+      "stats",
+      "cta",
+      "contact",
+      "footer",
+    ],
+  },
+  {
+    label: "Portfolio / Creator",
+    icon: "✨",
+    sections: [
+      "header",
+      "hero",
+      "image-text",
+      "features",
+      "testimonials",
+      "contact",
+      "footer",
+    ],
   },
 ];

@@ -112,6 +112,33 @@ async function publishPage(pageId) {
   });
 }
 
+async function duplicatePage(id) {
+  const src = await prisma.page.findUnique({ where: { id } });
+  if (!src) throw { status: 404, message: "Page not found" };
+
+  const baseSlug = `${src.slug}-copy`;
+  let slug = baseSlug;
+  let attempt = 1;
+  while (
+    await prisma.page.findUnique({ where: { slug }, select: { id: true } })
+  ) {
+    slug = `${baseSlug}-${attempt++}`;
+  }
+
+  return prisma.page.create({
+    data: {
+      projectId: src.projectId,
+      title: `${src.title} (Copy)`,
+      slug,
+      sections: src.sections,
+      metaTitle: src.metaTitle,
+      metaDescription: src.metaDescription,
+      pageBgColor: src.pageBgColor,
+      pageBgImage: src.pageBgImage,
+    },
+  });
+}
+
 async function deletePage(id) {
   await prisma.page.delete({ where: { id } });
 }
@@ -122,5 +149,6 @@ module.exports = {
   createPage,
   updatePage,
   publishPage,
+  duplicatePage,
   deletePage,
 };

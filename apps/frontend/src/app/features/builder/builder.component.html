@@ -631,6 +631,16 @@
         </button>
       </div>
 
+      @if (publishQrDataUrl()) {
+        <div class="flex justify-center mb-4">
+          <img
+            [src]="publishQrDataUrl()"
+            alt="QR Code"
+            class="w-28 h-28 rounded-xl border border-gray-200"
+          />
+        </div>
+      }
+
       <div class="grid grid-cols-2 gap-2 mb-4">
         <a
           [href]="'/p/' + publishResult()?.slug"

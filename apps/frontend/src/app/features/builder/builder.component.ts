@@ -6,6 +6,7 @@ import {
   OnInit,
   OnDestroy,
 } from "@angular/core";
+import QRCode from "qrcode";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
@@ -60,6 +61,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
     null,
   );
   showPublishModal = signal(false);
+  publishQrDataUrl = signal<string | null>(null);
   history = signal<Section[][]>([]);
   project = signal<Project | null>(null);
   savingDefault = signal(false);
@@ -312,6 +314,10 @@ export class BuilderComponent implements OnInit, OnDestroy {
           slug: page.slug,
           ga4MeasurementId: page.ga4MeasurementId,
         });
+        const pageUrl = `${window.location.origin}/p/${page.slug}`;
+        QRCode.toDataURL(pageUrl, { width: 200, margin: 1 })
+          .then((url) => this.publishQrDataUrl.set(url))
+          .catch(() => this.publishQrDataUrl.set(null));
         this.showPublishModal.set(true);
       },
       error: () => this.isPublishing.set(false),

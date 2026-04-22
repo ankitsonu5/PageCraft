@@ -79,6 +79,10 @@ export class PageService {
     return this.http.post<Page>(`${this.base}/${id}/publish`, {});
   }
 
+  duplicate(id: string) {
+    return this.http.post<Page>(`${this.base}/${id}/duplicate`, {});
+  }
+
   delete(id: string) {
     return this.http.delete(`${this.base}/${id}`);
   }

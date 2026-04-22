@@ -4,6 +4,7 @@ const {
   createPage,
   updatePage,
   publishPage,
+  duplicatePage,
   deletePage,
 } = require("./pages.service");
 
@@ -61,6 +62,11 @@ async function handlePublish(req, res) {
   res.json(await publishPage(req.params.id));
 }
 
+async function handleDuplicate(req, res) {
+  const page = await duplicatePage(req.params.id);
+  res.status(201).json(page);
+}
+
 async function handleDelete(req, res) {
   await deletePage(req.params.id);
   res.status(204).end();
@@ -72,5 +78,6 @@ module.exports = {
   handleCreate,
   handleUpdate,
   handlePublish,
+  handleDuplicate,
   handleDelete,
 };

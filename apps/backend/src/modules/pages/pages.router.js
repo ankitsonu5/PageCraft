@@ -5,6 +5,7 @@ const {
   handleCreate,
   handleUpdate,
   handlePublish,
+  handleDuplicate,
   handleDelete,
 } = require("./pages.controller");
 
@@ -15,6 +16,7 @@ router.post("/", handleCreate);
 router.get("/:id", handleGet);
 router.patch("/:id", handleUpdate);
 router.post("/:id/publish", handlePublish);
+router.post("/:id/duplicate", handleDuplicate);
 router.delete("/:id", handleDelete);
 
 module.exports = router;

@@ -1483,5 +1483,174 @@
         </div>
       }
     }
+
+    @if (section.type === "pre-save") {
+      @if (activeTab === "content") {
+        <div>
+          <label class="label">Cover Art URL</label>
+          <input
+            class="input mb-2"
+            placeholder="https://... or upload below"
+            [ngModel]="d['coverUrl']"
+            (ngModelChange)="patch('coverUrl', $event)"
+          />
+          <label
+            class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-brand-400 hover:text-brand-500 transition-colors"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            {{ uploading() ? "Uploading..." : "Upload Cover Art" }}
+            <input
+              type="file"
+              accept="image/*"
+              class="hidden"
+              [disabled]="uploading()"
+              (change)="uploadImage($event, 'coverUrl')"
+            />
+          </label>
+          @if (uploadError()) {
+            <p class="text-xs text-red-500 mt-1">{{ uploadError() }}</p>
+          }
+          @if (d["coverUrl"]) {
+            <img
+              [src]="d['coverUrl']"
+              class="mt-2 w-full rounded-xl object-cover h-32"
+            />
+          }
+        </div>
+
+        <div>
+          <label class="label">Track / Album Title</label>
+          <input
+            class="input"
+            [ngModel]="d['title']"
+            (ngModelChange)="patch('title', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Artist Name</label>
+          <input
+            class="input"
+            [ngModel]="d['artist']"
+            (ngModelChange)="patch('artist', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Release Date (optional)</label>
+          <input
+            class="input"
+            placeholder="e.g. 25 April 2025"
+            [ngModel]="d['releaseDate']"
+            (ngModelChange)="patch('releaseDate', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Headline</label>
+          <input
+            class="input"
+            [ngModel]="d['headline']"
+            (ngModelChange)="patch('headline', $event)"
+          />
+        </div>
+        <div>
+          <label class="label">Subtext</label>
+          <textarea
+            class="input"
+            rows="3"
+            [ngModel]="d['subtext']"
+            (ngModelChange)="patch('subtext', $event)"
+          ></textarea>
+        </div>
+
+        <div class="border-t border-gray-100 pt-3">
+          <p
+            class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2"
+          >
+            Pre-Save Links
+          </p>
+          <div class="space-y-2">
+            <div>
+              <label class="label">Spotify Pre-Save URL</label>
+              <input
+                class="input"
+                placeholder="https://distrokid.com/hyperfollow/..."
+                [ngModel]="d['spotifyUrl']"
+                (ngModelChange)="patch('spotifyUrl', $event)"
+              />
+            </div>
+            <div>
+              <label class="label">Apple Music Pre-Add URL</label>
+              <input
+                class="input"
+                placeholder="https://music.apple.com/..."
+                [ngModel]="d['appleUrl']"
+                (ngModelChange)="patch('appleUrl', $event)"
+              />
+            </div>
+            <div>
+              <label class="label">Amazon Music Pre-Save URL</label>
+              <input
+                class="input"
+                placeholder="https://music.amazon.com/..."
+                [ngModel]="d['amazonUrl']"
+                (ngModelChange)="patch('amazonUrl', $event)"
+              />
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (activeTab === "style") {
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Background</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['bgColor']"
+              (ngModelChange)="patch('bgColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Text Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['textColor']"
+              (ngModelChange)="patch('textColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Accent Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['accentColor']"
+              (ngModelChange)="patch('accentColor', $event)"
+            />
+          </div>
+        </div>
+        <div>
+          <label class="label">Padding Y (px)</label>
+          <input
+            type="number"
+            class="input"
+            [ngModel]="d['paddingY']"
+            (ngModelChange)="patch('paddingY', +$event)"
+          />
+        </div>
+      }
+    }
   </div>
 </div>

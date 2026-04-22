@@ -120,6 +120,25 @@ export class ProjectComponent implements OnInit {
       });
   }
 
+  duplicatePage(e: Event, pageId: string) {
+    e.stopPropagation();
+    this.pageService.duplicate(pageId).subscribe((newPage) => {
+      this.pages.update((arr) => [
+        ...arr,
+        {
+          id: newPage.id,
+          title: newPage.title,
+          slug: newPage.slug,
+          isPublished: newPage.isPublished,
+          publishedAt: newPage.publishedAt,
+          updatedAt: newPage.updatedAt,
+          ga4MeasurementId: newPage.ga4MeasurementId,
+          metaTitle: newPage.metaTitle,
+        },
+      ]);
+    });
+  }
+
   deletePage(e: Event, pageId: string) {
     e.stopPropagation();
     if (!confirm("This page will be permanently deleted. Are you sure?"))
