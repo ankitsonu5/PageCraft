@@ -28,7 +28,7 @@ async function sendLeadNotification({
   if (!transporter) return; // SMTP not configured — skip silently
 
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-  const pageUrl = `${process.env.APP_BASE_URL || ""}/p/${pageSlug}`;
+  const pageUrl = `${process.env.APP_BASE_URL || ""}/${pageSlug}`;
 
   await transporter.sendMail({
     from,

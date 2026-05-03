@@ -41,17 +41,17 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
-    path: "p/:slug",
-    loadComponent: () =>
-      import("./features/page-viewer/page-viewer.component").then(
-        (m) => m.PageViewerComponent,
-      ),
-  },
-  {
     path: "leads/:projectId",
     loadComponent: () =>
       import("./features/leads/leads.component").then((m) => m.LeadsComponent),
     canActivate: [authGuard],
+  },
+  {
+    path: ":slug",
+    loadComponent: () =>
+      import("./features/page-viewer/page-viewer.component").then(
+        (m) => m.PageViewerComponent,
+      ),
   },
   { path: "**", redirectTo: "dashboard" },
 ];

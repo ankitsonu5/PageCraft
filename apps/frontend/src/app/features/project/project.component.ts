@@ -149,6 +149,6 @@ export class ProjectComponent implements OnInit {
   }
 
   copyLink(slug: string) {
-    navigator.clipboard.writeText(`${this.baseUrl}/p/${slug}`);
+    navigator.clipboard.writeText(`${this.baseUrl}/${slug}`);
   }
 }

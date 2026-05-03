@@ -274,7 +274,7 @@
               <div>
                 <label class="label">URL Slug</label>
                 <div class="flex items-center gap-1">
-                  <span class="text-xs text-gray-400">/p/</span>
+                  <span class="text-xs text-gray-400">/</span>
                   <input
                     type="text"
                     class="input text-xs"
@@ -621,7 +621,7 @@
 
       <div class="bg-gray-50 rounded-xl p-3 mb-4 flex items-center gap-2">
         <span class="text-sm text-gray-600 flex-1 truncate">
-          {{ "https://yourdomain.com/p/" + publishResult()?.slug }}
+          {{ "ashwingane.com/" + publishResult()?.slug }}
         </span>
         <button
           (click)="copyPublishedLink()"
@@ -643,7 +643,7 @@
 
       <div class="grid grid-cols-2 gap-2 mb-4">
         <a
-          [href]="'/p/' + publishResult()?.slug"
+          [href]="'/' + publishResult()?.slug"
           target="_blank"
           class="btn-secondary text-center"
         >

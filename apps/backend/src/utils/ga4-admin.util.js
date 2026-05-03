@@ -18,7 +18,7 @@ async function createGA4Property({ pageTitle, pageSlug, projectName }) {
         type: "WEB_DATA_STREAM",
         displayName: `${pageSlug} stream`,
         webStreamData: {
-          defaultUri: `${process.env.APP_BASE_URL}/p/${pageSlug}`,
+          defaultUri: `${process.env.APP_BASE_URL}/${pageSlug}`,
         },
       },
     });

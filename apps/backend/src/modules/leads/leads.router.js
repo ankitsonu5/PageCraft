@@ -74,7 +74,7 @@ router.post("/", async (req, res) => {
     accessToken: metaCapiToken,
     eventName: "Lead",
     email: normalizedEmail,
-    pageUrl: `${process.env.APP_BASE_URL}/p/${page.slug}`,
+    pageUrl: `${process.env.APP_BASE_URL}/${page.slug}`,
     clientIp: ip,
     clientUserAgent: req.headers["user-agent"],
   }).catch(() => {});

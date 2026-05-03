@@ -314,7 +314,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
           slug: page.slug,
           ga4MeasurementId: page.ga4MeasurementId,
         });
-        const pageUrl = `${window.location.origin}/p/${page.slug}`;
+        const pageUrl = `${window.location.origin}/${page.slug}`;
         QRCode.toDataURL(pageUrl, { width: 200, margin: 1 })
           .then((url) => this.publishQrDataUrl.set(url))
           .catch(() => this.publishQrDataUrl.set(null));
@@ -327,13 +327,13 @@ export class BuilderComponent implements OnInit, OnDestroy {
   copyPublishedLink() {
     const slug = this.publishResult()?.slug;
     if (slug)
-      navigator.clipboard.writeText(`${window.location.origin}/p/${slug}`);
+      navigator.clipboard.writeText(`${window.location.origin}/${slug}`);
   }
 
   whatsappShare() {
     const slug = this.publishResult()?.slug;
     if (!slug) return;
-    const url = encodeURIComponent(`${window.location.origin}/p/${slug}`);
+    const url = encodeURIComponent(`${window.location.origin}/${slug}`);
     window.open(`https://wa.me/?text=${url}`, "_blank");
   }
 }
