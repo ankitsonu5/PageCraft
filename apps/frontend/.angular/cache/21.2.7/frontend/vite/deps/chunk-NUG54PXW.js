@@ -4,25 +4,23 @@ import {
   InjectionToken,
   inject,
   setClassMetadata,
-  ɵɵdefineInjectable,
-} from "./chunk-K65I536F.js";
+  ɵɵdefineInjectable
+} from "./chunk-VNJHDGXW.js";
 
 // node_modules/@angular/common/fesm2022/_xhr-chunk.mjs
 function parseCookieValue(cookieStr, name) {
   name = encodeURIComponent(name);
   for (const cookie of cookieStr.split(";")) {
     const eqIndex = cookie.indexOf("=");
-    const [cookieName, cookieValue] =
-      eqIndex == -1
-        ? [cookie, ""]
-        : [cookie.slice(0, eqIndex), cookie.slice(eqIndex + 1)];
+    const [cookieName, cookieValue] = eqIndex == -1 ? [cookie, ""] : [cookie.slice(0, eqIndex), cookie.slice(eqIndex + 1)];
     if (cookieName.trim() === name) {
       return decodeURIComponent(cookieValue);
     }
   }
   return null;
 }
-var XhrFactory = class {};
+var XhrFactory = class {
+};
 
 // node_modules/@angular/common/fesm2022/_platform_location-chunk.mjs
 var _DOM = null;
@@ -32,7 +30,8 @@ function getDOM() {
 function setRootDomAdapter(adapter) {
   _DOM ??= adapter;
 }
-var DomAdapter = class {};
+var DomAdapter = class {
+};
 var PlatformLocation = class _PlatformLocation {
   historyGo(relativePosition) {
     throw new Error(ngDevMode ? "Not implemented" : "");
@@ -43,31 +42,19 @@ var PlatformLocation = class _PlatformLocation {
   static ɵprov = ɵɵdefineInjectable({
     token: _PlatformLocation,
     factory: () => (() => inject(BrowserPlatformLocation))(),
-    providedIn: "platform",
+    providedIn: "platform"
   });
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) &&
-    setClassMetadata(
-      PlatformLocation,
-      [
-        {
-          type: Injectable,
-          args: [
-            {
-              providedIn: "platform",
-              useFactory: () => inject(BrowserPlatformLocation),
-            },
-          ],
-        },
-      ],
-      null,
-      null,
-    );
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(PlatformLocation, [{
+    type: Injectable,
+    args: [{
+      providedIn: "platform",
+      useFactory: () => inject(BrowserPlatformLocation)
+    }]
+  }], null, null);
 })();
-var LOCATION_INITIALIZED = new InjectionToken(
-  typeof ngDevMode !== "undefined" && ngDevMode ? "Location Initialized" : "",
-);
+var LOCATION_INITIALIZED = new InjectionToken(typeof ngDevMode !== "undefined" && ngDevMode ? "Location Initialized" : "");
 var BrowserPlatformLocation = class _BrowserPlatformLocation extends PlatformLocation {
   _location;
   _history;
@@ -138,27 +125,17 @@ var BrowserPlatformLocation = class _BrowserPlatformLocation extends PlatformLoc
   static ɵprov = ɵɵdefineInjectable({
     token: _BrowserPlatformLocation,
     factory: () => (() => new _BrowserPlatformLocation())(),
-    providedIn: "platform",
+    providedIn: "platform"
   });
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) &&
-    setClassMetadata(
-      BrowserPlatformLocation,
-      [
-        {
-          type: Injectable,
-          args: [
-            {
-              providedIn: "platform",
-              useFactory: () => new BrowserPlatformLocation(),
-            },
-          ],
-        },
-      ],
-      () => [],
-      null,
-    );
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(BrowserPlatformLocation, [{
+    type: Injectable,
+    args: [{
+      providedIn: "platform",
+      useFactory: () => new BrowserPlatformLocation()
+    }]
+  }], () => [], null);
 })();
 
 export {
@@ -169,6 +146,6 @@ export {
   DomAdapter,
   PlatformLocation,
   LOCATION_INITIALIZED,
-  BrowserPlatformLocation,
+  BrowserPlatformLocation
 };
-//# sourceMappingURL=chunk-7VWQJIIP.js.map
+//# sourceMappingURL=chunk-NUG54PXW.js.map
