@@ -1,7 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
-const { createGA4Property } = require("../../utils/ga4-admin.util");
-
-const prisma = new PrismaClient();
+const prisma = require("../../lib/prisma");
 
 const RESERVED_SLUGS = [
   "admin",
@@ -16,6 +13,8 @@ const RESERVED_SLUGS = [
   "uploads",
   "health",
   "public",
+  "t",
+  "p",
 ];
 
 function sanitizeSlug(slug) {
@@ -290,13 +289,17 @@ async function publishPage(pageId) {
     ga4StreamId: page.ga4StreamId,
   };
 
-  if (!page.ga4MeasurementId) {
-    const result = await createGA4Property({
-      pageTitle: page.title,
-      pageSlug: page.slug,
-      projectName: page.project.name,
-    });
-    if (result) ga4Data = result;
+  if (!page.ga4MeasurementId && typeof createGA4Property === "function") {
+    try {
+      const result = await createGA4Property({
+        pageTitle: page.title,
+        pageSlug: page.slug,
+        projectName: page.project.name,
+      });
+      if (result) ga4Data = result;
+    } catch (_err) {
+      // skip auto-provisioning if GA4 API is not configured
+    }
   }
 
   return prisma.page.update({

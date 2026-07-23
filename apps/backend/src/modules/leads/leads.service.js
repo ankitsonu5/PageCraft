@@ -1,17 +1,25 @@
-const { PrismaClient } = require("@prisma/client");
-
-const prisma = new PrismaClient();
+const prisma = require("../../lib/prisma");
 
 async function getLeads({
   projectId,
   platform,
   segment,
+  search,
   limit = 200,
   offset = 0,
 }) {
   const where = { projectId };
   if (platform) where.platform = platform;
   if (segment) where.segment = segment;
+  if (search) {
+    const q = String(search).trim();
+    where.OR = [
+      { email: { contains: q, mode: "insensitive" } },
+      { name: { contains: q, mode: "insensitive" } },
+      { phone: { contains: q, mode: "insensitive" } },
+      { country: { contains: q, mode: "insensitive" } },
+    ];
+  }
 
   const [leads, total] = await Promise.all([
     prisma.fanLead.findMany({

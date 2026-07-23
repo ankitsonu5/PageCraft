@@ -1,11 +1,18 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { PrismaClient } = require("@prisma/client");
-
-const prisma = new PrismaClient();
+const prisma = require("../../lib/prisma");
 
 async function login(email, password) {
-  const admin = await prisma.admin.findUnique({ where: { email } });
+  let admin;
+  try {
+    admin = await prisma.admin.findUnique({ where: { email } });
+  } catch (dbError) {
+    console.error("[Auth Service] Database connection error during login:", dbError.message);
+    const error = new Error("Database service temporarily unavailable. Please try again.");
+    error.status = 503;
+    throw error;
+  }
+
   if (!admin) {
     const error = new Error("Invalid credentials");
     error.status = 401;

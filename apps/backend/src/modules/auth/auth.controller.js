@@ -5,8 +5,13 @@ async function handleLogin(req, res) {
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password required" });
   }
-  const result = await login(email, password);
-  res.json(result);
+  try {
+    const result = await login(email, password);
+    res.json(result);
+  } catch (err) {
+    const status = err.status || 500;
+    res.status(status).json({ error: err.message || "Login failed" });
+  }
 }
 
 async function handleMe(req, res) {

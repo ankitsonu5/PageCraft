@@ -17,6 +17,7 @@ import {
 } from "@angular/cdk/drag-drop";
 import { PageService, Section } from "../../core/services/page.service";
 import { ProjectService, Project } from "../../core/services/project.service";
+import { getCleanCampaignUrl } from "../../core/utils/url.util";
 import {
   getDefaultData,
   SectionType,
@@ -51,6 +52,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
   pageSlug = signal("");
   sections = signal<Section[]>([]);
   selectedId = signal<string | null>(null);
+  focusedField = signal<string | null>(null);
   deviceMode = signal<DeviceMode>("desktop");
   railTab = signal<RailTab>("elements");
   activeRsbTab = signal<"content" | "style">("content");
@@ -62,6 +64,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
   );
   showPublishModal = signal(false);
   publishQrDataUrl = signal<string | null>(null);
+  copiedLink = signal(false);
   history = signal<Section[][]>([]);
   project = signal<Project | null>(null);
   savingDefault = signal(false);
@@ -71,6 +74,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
   pageSettings = signal({
     metaTitle: "",
     metaDescription: "",
+    ogImage: "",
     pageBgColor: "",
     pageBgImage: "",
     fbPixelId: "",
@@ -131,6 +135,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
       this.pageSettings.set({
         metaTitle: page.metaTitle || "",
         metaDescription: page.metaDescription || "",
+        ogImage: page.ogImage || "",
         pageBgColor: page.pageBgColor || "",
         pageBgImage: page.pageBgImage || "",
         fbPixelId: page.fbPixelId || "",
@@ -226,6 +231,10 @@ export class BuilderComponent implements OnInit, OnDestroy {
     this.sections.set(arr);
   }
 
+  onFieldSelected(fieldName: string) {
+    this.focusedField.set(fieldName);
+  }
+
   updateSectionData(id: string, patch: Record<string, unknown>) {
     this.sections.update((arr) =>
       arr.map((s) =>
@@ -307,33 +316,59 @@ export class BuilderComponent implements OnInit, OnDestroy {
   publishPage() {
     if (!this.pageId()) return;
     this.isPublishing.set(true);
-    this.pageService.publish(this.pageId()!).subscribe({
-      next: (page) => {
-        this.isPublishing.set(false);
-        this.publishResult.set({
-          slug: page.slug,
-          ga4MeasurementId: page.ga4MeasurementId,
-        });
-        const pageUrl = `${window.location.origin}/${page.slug}`;
-        QRCode.toDataURL(pageUrl, { width: 200, margin: 1 })
-          .then((url) => this.publishQrDataUrl.set(url))
-          .catch(() => this.publishQrDataUrl.set(null));
-        this.showPublishModal.set(true);
-      },
-      error: () => this.isPublishing.set(false),
-    });
+    // Save latest sections & title first before publishing
+    this.pageService
+      .update(this.pageId()!, {
+        title: this.pageTitle(),
+        sections: this.sections() as never,
+      })
+      .subscribe({
+        next: () => {
+          this.pageService.publish(this.pageId()!).subscribe({
+            next: (page) => {
+              this.isPublishing.set(false);
+              this.publishResult.set({
+                slug: page.slug,
+                ga4MeasurementId: page.ga4MeasurementId,
+              });
+              const pageUrl = getCleanCampaignUrl(page.slug);
+              QRCode.toDataURL(pageUrl, { width: 200, margin: 1 })
+                .then((url) => this.publishQrDataUrl.set(url))
+                .catch(() => this.publishQrDataUrl.set(null));
+              this.showPublishModal.set(true);
+            },
+            error: (err) => {
+              console.error("Publish error:", err);
+              this.isPublishing.set(false);
+            },
+          });
+        },
+        error: (err) => {
+          console.error("Save draft before publish error:", err);
+          this.isPublishing.set(false);
+        },
+      });
+  }
+
+  getCleanUrl(slug: string): string {
+    return getCleanCampaignUrl(slug);
   }
 
   copyPublishedLink() {
     const slug = this.publishResult()?.slug;
-    if (slug)
-      navigator.clipboard.writeText(`${window.location.origin}/${slug}`);
+    if (slug) {
+      const url = getCleanCampaignUrl(slug);
+      navigator.clipboard.writeText(url).then(() => {
+        this.copiedLink.set(true);
+        setTimeout(() => this.copiedLink.set(false), 2500);
+      });
+    }
   }
 
   whatsappShare() {
     const slug = this.publishResult()?.slug;
     if (!slug) return;
-    const url = encodeURIComponent(`${window.location.origin}/${slug}`);
+    const url = encodeURIComponent(getCleanCampaignUrl(slug));
     window.open(`https://wa.me/?text=${url}`, "_blank");
   }
 }

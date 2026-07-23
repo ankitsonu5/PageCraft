@@ -1,10 +1,7 @@
 const express = require("express");
 const geoip = require("geoip-lite");
 const UAParser = require("ua-parser-js");
-const { PrismaClient } = require("@prisma/client");
-const { sendCAPIEvent } = require("../../utils/meta-capi.util");
-
-const prisma = new PrismaClient();
+const prisma = require("../../lib/prisma");
 const router = express.Router();
 
 // GET /t/:slug  — public click-tracking redirect

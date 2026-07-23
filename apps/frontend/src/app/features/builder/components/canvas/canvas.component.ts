@@ -20,6 +20,7 @@ export class CanvasComponent {
   @Input() canvasWidth = "100%";
 
   @Output() selectSection = new EventEmitter<string>();
+  @Output() selectField = new EventEmitter<string>();
   @Output() addSection = new EventEmitter<string>();
   @Output() deleteSection = new EventEmitter<string>();
   @Output() duplicateSection = new EventEmitter<string>();

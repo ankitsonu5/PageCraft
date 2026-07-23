@@ -3,6 +3,7 @@ import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { ActivatedRoute } from "@angular/router";
 import { PageService, Page } from "../../core/services/page.service";
 import { SectionRendererComponent } from "../builder/components/section-renderer/section-renderer.component";
+import { getCleanCampaignUrl } from "../../core/utils/url.util";
 
 @Component({
   selector: "app-page-viewer",
@@ -33,49 +34,17 @@ export class PageViewerComponent implements OnInit {
         if (isPlatformBrowser(this.platformId)) {
           document.title = data.metaTitle || data.title;
 
-          if (data.ga4MeasurementId) {
-            this.injectGA4(data.ga4MeasurementId);
-          }
+          // Log Page View event asynchronously
+          this.trackView(data.id);
 
-          // GTM (no consent required — loads consent mode)
-          if (data.gtmId) {
-            this.injectGTM(data.gtmId);
-          }
+          // Apply canonical URL & OG meta tags immediately for SEO
+          this.setCanonicalAndMetaTags(data);
 
-          // Google Ads
-          if (data.googleAdsId) {
-            this.injectGoogleAds(data.googleAdsId);
-          }
-
-          // TikTok Pixel
-          if (data.tiktokPixelId) {
-            this.injectTikTokPixel(data.tiktokPixelId);
-          }
-
-          // Snapchat Pixel
-          if (data.snapchatPixelId) {
-            this.injectSnapchatPixel(data.snapchatPixelId);
-          }
-
-          // Meta Pixel (project-level) + page-level FB Pixel — require consent
-          const projectPixelId = data.project?.metaPixelId;
-          const pageFbPixelId = data.fbPixelId;
-          const anyMetaPixel = projectPixelId || pageFbPixelId;
-          if (anyMetaPixel) {
-            const stored = localStorage.getItem("pc_consent");
-            if (stored === "granted") {
-              this.consentGiven.set(true);
-              if (projectPixelId) this.injectMetaPixel(projectPixelId);
-              if (pageFbPixelId && pageFbPixelId !== projectPixelId) {
-                this.injectMetaPixel(pageFbPixelId, "meta-pixel-page-script");
-              }
-            } else {
-              this.showConsentBanner.set(true);
-            }
-          }
-
-          // Apply page background
+          // Apply page background immediately for critical rendering path
           this.applyPageBackground(data.pageBgColor, data.pageBgImage);
+
+          // Defer non-critical pixel tracking scripts until main thread is idle
+          this.scheduleDeferredPixelInjection(data);
         }
       },
       error: () => {
@@ -241,5 +210,79 @@ export class PageViewerComponent implements OnInit {
       });
     `;
     document.head.appendChild(s2);
+  }
+
+  private setCanonicalAndMetaTags(data: Page) {
+    const pageUrl = getCleanCampaignUrl(data.slug, data.customDomain);
+
+    // 1. Canonical link element
+    let link: HTMLLinkElement | null = document.querySelector("link[rel='canonical']");
+    if (!link) {
+      link = document.createElement("link");
+      link.setAttribute("rel", "canonical");
+      document.head.appendChild(link);
+    }
+    link.setAttribute("href", pageUrl);
+
+    // 2. Open Graph meta tags
+    this.setMetaTag("property", "og:url", pageUrl);
+    this.setMetaTag("property", "og:title", data.metaTitle || data.title);
+    if (data.metaDescription) this.setMetaTag("property", "og:description", data.metaDescription);
+    if (data.ogImage) this.setMetaTag("property", "og:image", data.ogImage);
+  }
+
+  private setMetaTag(attrName: string, attrVal: string, content: string) {
+    let meta: HTMLMetaElement | null = document.querySelector(`meta[${attrName}="${attrVal}"]`);
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute(attrName, attrVal);
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", content);
+  }
+
+  private scheduleDeferredPixelInjection(data: Page) {
+    const inject = () => {
+      if (data.ga4MeasurementId) this.injectGA4(data.ga4MeasurementId);
+      if (data.gtmId) this.injectGTM(data.gtmId);
+      if (data.googleAdsId) this.injectGoogleAds(data.googleAdsId);
+      if (data.tiktokPixelId) this.injectTikTokPixel(data.tiktokPixelId);
+      if (data.snapchatPixelId) this.injectSnapchatPixel(data.snapchatPixelId);
+
+      const projectPixelId = data.project?.metaPixelId;
+      const pageFbPixelId = data.fbPixelId;
+      if (projectPixelId || pageFbPixelId) {
+        const stored = localStorage.getItem("pc_consent");
+        if (stored === "granted") {
+          this.consentGiven.set(true);
+          if (projectPixelId) this.injectMetaPixel(projectPixelId);
+          if (pageFbPixelId && pageFbPixelId !== projectPixelId) {
+            this.injectMetaPixel(pageFbPixelId, "meta-pixel-page-script");
+          }
+        } else {
+          this.showConsentBanner.set(true);
+        }
+      }
+    };
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      (window as any).requestIdleCallback(inject, { timeout: 3500 });
+    } else {
+      setTimeout(inject, 2500);
+    }
+  }
+
+  private trackView(pageId: string) {
+    const params = this.route.snapshot.queryParams;
+    this.pageService
+      .trackView({
+        pageId,
+        referrer: typeof document !== "undefined" ? document.referrer || undefined : undefined,
+        utmSource: params["utm_source"] || undefined,
+        utmMedium: params["utm_medium"] || undefined,
+        utmCampaign: params["utm_campaign"] || undefined,
+        utmContent: params["utm_content"] || undefined,
+      })
+      .subscribe({ error: () => {} });
   }
 }

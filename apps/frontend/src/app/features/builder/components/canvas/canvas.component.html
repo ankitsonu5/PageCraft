@@ -32,21 +32,25 @@
         <p class="text-sm text-gray-400 mb-6 max-w-xs">
           Drag elements from the left panel or click to add sections
         </p>
-        <div class="flex flex-wrap gap-2 justify-center">
-          @for (
-            tpl of [
-              ["🎸", "Musician", ["hero", "features", "stats", "contact"]],
-              ["💼", "Business", ["hero", "features", "cta", "contact"]],
-            ];
-            track tpl[0]
-          ) {
-            <button
-              (click)="addSection.emit('hero')"
-              class="btn-secondary btn-sm"
-            >
-              {{ tpl[0] }} {{ tpl[1] }} Template
-            </button>
-          }
+        <div class="flex flex-wrap gap-2.5 justify-center max-w-md mx-auto">
+          <button
+            (click)="addSection.emit('podcast-smart-link')"
+            class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-md shadow-indigo-500/20 flex items-center gap-2 transition-all hover:scale-105"
+          >
+            <span>🎙️</span> Add Podcast Smart Link
+          </button>
+          <button
+            (click)="addSection.emit('smart-link')"
+            class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs shadow-md shadow-brand-500/20 flex items-center gap-2 transition-all hover:scale-105"
+          >
+            <span>🎵</span> Add Music Smart Link
+          </button>
+          <button
+            (click)="addSection.emit('hero')"
+            class="px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-xs shadow-xs flex items-center gap-2 transition-all"
+          >
+            <span>🎸</span> Musician Hero Section
+          </button>
         </div>
       </div>
     }
@@ -191,7 +195,7 @@
           }
 
           <!-- Section content -->
-          <app-section-renderer [section]="section" />
+          <app-section-renderer [section]="section" (selectField)="selectField.emit($event)" />
 
           <!-- Add between sections -->
           @if (hoveredId === section.id || selectedId === section.id) {

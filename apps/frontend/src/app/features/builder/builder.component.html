@@ -145,12 +145,19 @@
     <button
       (click)="publishPage()"
       [disabled]="isPublishing()"
-      class="btn-primary btn-sm ml-1"
+      class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-medium text-xs shadow-sm hover:shadow-md hover:shadow-brand-500/20 active:scale-95 disabled:opacity-50 transition-all duration-200 ml-1"
     >
       @if (isPublishing()) {
-        Publishing...
+        <svg class="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <span>Publishing...</span>
       } @else {
-        Publish
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11l7-7 7 7M12 4v16" />
+        </svg>
+        <span>Publish</span>
       }
     </button>
   </header>
@@ -159,30 +166,68 @@
   <div class="flex flex-1 overflow-hidden">
     <!-- Rail -->
     <div
-      class="w-14 bg-white border-r border-gray-200 flex flex-col items-center py-3 gap-1 flex-shrink-0"
+      class="w-14 bg-white border-r border-gray-200 flex flex-col items-center py-4 gap-2 flex-shrink-0 shadow-sm"
     >
-      @for (
-        tab of [
-          { id: "elements", icon: "⊞" },
-          { id: "templates", icon: "▦" },
-          { id: "layers", icon: "◫" },
-          { id: "settings", icon: "⚙" },
-        ];
-        track tab.id
-      ) {
-        <button
-          (click)="railTab.set($any(tab.id))"
-          class="w-9 h-9 flex items-center justify-center rounded-xl text-base transition-colors"
-          [class]="
-            railTab() === tab.id
-              ? 'bg-brand-500 text-white'
-              : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'
-          "
-          [title]="tab.id"
-        >
-          {{ tab.icon }}
-        </button>
-      }
+      <button
+        (click)="railTab.set('elements')"
+        class="w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200"
+        [class]="
+          railTab() === 'elements'
+            ? 'bg-gradient-to-tr from-brand-600 to-indigo-500 text-white shadow-md shadow-brand-500/30 scale-105'
+            : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'
+        "
+        title="Elements"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
+      </button>
+
+      <button
+        (click)="railTab.set('templates')"
+        class="w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200"
+        [class]="
+          railTab() === 'templates'
+            ? 'bg-gradient-to-tr from-brand-600 to-indigo-500 text-white shadow-md shadow-brand-500/30 scale-105'
+            : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'
+        "
+        title="Templates"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+      </button>
+
+      <button
+        (click)="railTab.set('layers')"
+        class="w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200"
+        [class]="
+          railTab() === 'layers'
+            ? 'bg-gradient-to-tr from-brand-600 to-indigo-500 text-white shadow-md shadow-brand-500/30 scale-105'
+            : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'
+        "
+        title="Layers"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+      </button>
+
+      <button
+        (click)="railTab.set('settings')"
+        class="w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200"
+        [class]="
+          railTab() === 'settings'
+            ? 'bg-gradient-to-tr from-brand-600 to-indigo-500 text-white shadow-md shadow-brand-500/30 scale-105'
+            : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'
+        "
+        title="Page Settings"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
     </div>
 
     <!-- Left Panel -->
@@ -196,24 +241,29 @@
         />
       } @else if (railTab() === "templates") {
         <div class="p-4">
-          <p
-            class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"
-          >
-            Templates
-          </p>
-          <div class="space-y-2">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              Templates
+            </p>
+            <span class="text-[10px] bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full font-semibold border border-brand-100">
+              {{ templates.length }} Layouts
+            </span>
+          </div>
+          <div class="space-y-2.5">
             @for (tpl of templates; track tpl.label) {
               <button
                 (click)="applyTemplate(tpl.sections)"
-                class="w-full text-left p-3 rounded-xl border border-gray-200 hover:border-brand-400 hover:bg-brand-50 transition-all group"
+                class="w-full text-left p-3 rounded-2xl border border-gray-200/80 bg-white hover:border-brand-400 hover:shadow-md hover:shadow-brand-500/10 hover:-translate-y-0.5 transition-all duration-200 group relative overflow-hidden"
               >
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="text-xl">{{ tpl.icon }}</span>
-                  <span class="font-medium text-sm text-gray-900">{{
-                    tpl.label
-                  }}</span>
+                <div class="flex items-center gap-2.5 mb-1.5">
+                  <div class="w-8 h-8 rounded-xl bg-gray-50 group-hover:bg-brand-50 flex items-center justify-center text-lg transition-colors flex-shrink-0 border border-gray-100 group-hover:border-brand-200">
+                    {{ tpl.icon }}
+                  </div>
+                  <span class="font-semibold text-sm text-gray-800 group-hover:text-brand-600 transition-colors">
+                    {{ tpl.label }}
+                  </span>
                 </div>
-                <p class="text-xs text-gray-400">
+                <p class="text-[11px] text-gray-400 pl-10 leading-relaxed font-normal group-hover:text-gray-500">
                   {{ tpl.sections.join(" → ") }}
                 </p>
               </button>
@@ -305,6 +355,17 @@
                   (ngModelChange)="patchSettings('metaDescription', $event)"
                   name="metaDesc"
                 ></textarea>
+              </div>
+              <div>
+                <label class="label">OG Image URL (Social Share Image)</label>
+                <input
+                  type="text"
+                  class="input text-xs"
+                  placeholder="https://... or image link"
+                  [ngModel]="pageSettings().ogImage"
+                  (ngModelChange)="patchSettings('ogImage', $event)"
+                  name="ogImage"
+                />
               </div>
             </div>
           </div>
@@ -504,6 +565,7 @@
       [selectedId]="selectedId()"
       [canvasWidth]="canvasWidth()"
       (selectSection)="selectedId.set($event)"
+      (selectField)="onFieldSelected($event)"
       (addSection)="addSection($event)"
       (deleteSection)="deleteSection($event)"
       (duplicateSection)="duplicateSection($event)"
@@ -553,6 +615,7 @@
           class="flex-1 overflow-y-auto"
           [section]="selectedSection()!"
           [activeTab]="activeRsbTab()"
+          [focusedField]="focusedField()"
           (tabChange)="activeRsbTab.set($event)"
           (dataChange)="updateSectionData(selectedSection()!.id, $event)"
         />
@@ -621,13 +684,18 @@
 
       <div class="bg-gray-50 rounded-xl p-3 mb-4 flex items-center gap-2">
         <span class="text-sm text-gray-600 flex-1 truncate">
-          {{ "ashwingane.com/" + publishResult()?.slug }}
+          {{ getCleanUrl(publishResult()?.slug || '') }}
         </span>
         <button
           (click)="copyPublishedLink()"
-          class="btn-secondary btn-sm flex-shrink-0"
+          class="btn-secondary btn-sm flex-shrink-0 font-semibold"
+          [class.text-green-600]="copiedLink()"
         >
-          Copy
+          @if (copiedLink()) {
+            ✓ Copied!
+          } @else {
+            Copy
+          }
         </button>
       </div>
 
@@ -643,7 +711,7 @@
 
       <div class="grid grid-cols-2 gap-2 mb-4">
         <a
-          [href]="'/' + publishResult()?.slug"
+          [href]="getCleanUrl(publishResult()?.slug || '')"
           target="_blank"
           class="btn-secondary text-center"
         >

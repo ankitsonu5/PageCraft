@@ -9,6 +9,8 @@ import {
 } from "../../core/services/project.service";
 import { PageService } from "../../core/services/page.service";
 
+import { getCleanCampaignUrl, sanitizeSlug } from "../../core/utils/url.util";
+
 @Component({
   selector: "app-project",
   standalone: true,
@@ -23,6 +25,7 @@ export class ProjectComponent implements OnInit {
   creating = signal(false);
   showSettings = signal(false);
   savingSettings = signal(false);
+  copiedSlug = signal<string | null>(null);
 
   newTitle = signal("");
   newSlug = signal("");
@@ -95,11 +98,7 @@ export class ProjectComponent implements OnInit {
 
   onTitleChange(title: string) {
     this.newTitle.set(title);
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-    this.newSlug.set(slug);
+    this.newSlug.set(sanitizeSlug(title));
   }
 
   createPage() {
@@ -148,7 +147,16 @@ export class ProjectComponent implements OnInit {
     });
   }
 
-  copyLink(slug: string) {
-    navigator.clipboard.writeText(`${this.baseUrl}/${slug}`);
+  getCleanUrl(slug: string, customDomain?: string | null): string {
+    return getCleanCampaignUrl(slug, customDomain);
+  }
+
+  copyLink(e: Event, slug: string, customDomain?: string | null) {
+    e.stopPropagation();
+    const url = getCleanCampaignUrl(slug, customDomain);
+    navigator.clipboard.writeText(url).then(() => {
+      this.copiedSlug.set(slug);
+      setTimeout(() => this.copiedSlug.set(null), 2500);
+    });
   }
 }

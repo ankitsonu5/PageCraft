@@ -1,19 +1,14 @@
 const express = require("express");
 const geoip = require("geoip-lite");
 const UAParser = require("ua-parser-js");
-const { PrismaClient } = require("@prisma/client");
-const { sendCAPIEvent } = require("../../utils/meta-capi.util");
-const { addToKlaviyoList } = require("../../utils/klaviyo.util");
-const { sendLeadNotification } = require("../../utils/mailer.util");
-
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require("../../lib/prisma");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // POST /api/leads  — public, fan email submit from published page
 router.post("/", async (req, res) => {
-  const { pageId, email, name, platform, source } = req.body;
+  const { pageId, email, name, phone, consent, country: customCountry, platform, source } = req.body;
 
   if (!pageId || !email) {
     return res.status(400).json({ error: "pageId and email are required" });
@@ -23,6 +18,9 @@ router.post("/", async (req, res) => {
   }
   if (name && (typeof name !== "string" || name.length > 120)) {
     return res.status(400).json({ error: "Invalid name" });
+  }
+  if (phone && (typeof phone !== "string" || phone.length > 30)) {
+    return res.status(400).json({ error: "Invalid phone number" });
   }
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -55,11 +53,13 @@ router.post("/", async (req, res) => {
       pageId,
       projectId: page.projectId,
       email: normalizedEmail,
-      name: name ? String(name).slice(0, 120) : null,
+      name: name ? String(name).trim().slice(0, 120) : null,
+      phone: phone ? String(phone).trim().slice(0, 30) : null,
+      consent: consent !== undefined ? Boolean(consent) : true,
       platform: platform ? String(platform).slice(0, 50) : null,
       source: source ? String(source).slice(0, 50) : "direct",
       city: geo?.city || null,
-      country: geo?.country || null,
+      country: customCountry ? String(customCountry).trim().slice(0, 50) : geo?.country || null,
       device,
       segment: "cold",
     },

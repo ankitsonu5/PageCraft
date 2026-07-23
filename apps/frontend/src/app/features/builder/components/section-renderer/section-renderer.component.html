@@ -502,22 +502,32 @@
   >
     <div class="max-w-sm mx-auto flex flex-col items-center gap-6">
       <!-- Cover Art -->
-      @if (d["coverUrl"]) {
-        <img
-          [src]="d['coverUrl']"
-          alt="Cover"
-          class="w-52 h-52 rounded-2xl object-cover shadow-2xl"
-        />
-      } @else {
-        <div
-          class="w-52 h-52 rounded-2xl flex items-center justify-center text-5xl shadow-2xl"
-          [style.background-color]="d['accentColor']"
-        >
-          🎵
-        </div>
-      }
+      <div
+        (click)="onElementClick($event, 'coverUrl')"
+        class="cursor-pointer hover:ring-4 hover:ring-brand-400 rounded-2xl transition-all"
+        title="Click to edit Cover Artwork"
+      >
+        @if (d["coverUrl"]) {
+          <img
+            [src]="d['coverUrl']"
+            alt="Cover"
+            class="w-52 h-52 rounded-2xl object-cover shadow-2xl"
+          />
+        } @else {
+          <div
+            class="w-52 h-52 rounded-2xl flex items-center justify-center text-5xl shadow-2xl"
+            [style.background-color]="d['accentColor']"
+          >
+            🎵
+          </div>
+        }
+      </div>
       <!-- Title & Artist -->
-      <div class="text-center">
+      <div
+        (click)="onElementClick($event, 'title')"
+        class="text-center cursor-pointer hover:bg-white/10 p-2 rounded-xl transition-all"
+        title="Click to edit Track Title & Artist"
+      >
         <p
           class="text-xs font-semibold uppercase tracking-widest mb-1 opacity-50"
         >
@@ -532,13 +542,15 @@
           @for (link of activeLinks; track link.platform) {
             <a
               [href]="getAffiliateUrl(link.platform, link.url)"
+              (click)="onElementClick($event, 'platform_' + link.platform); trackPlatformClick(link)"
               target="_blank"
               rel="noopener"
-              class="flex items-center gap-3 w-full px-5 py-3.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
+              class="flex items-center gap-3 w-full px-5 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-[1.02] shadow-lg cursor-pointer"
               [style.background-color]="platformBg(link.platform)"
               [style.color]="platformColor(link.platform)"
+              [title]="'Click to edit ' + link.label + ' link'"
             >
-              <span class="text-base leading-none">▶</span>
+              <span [innerHTML]="getPlatformIconSvg(link.platform, link.icon)" class="flex items-center justify-center"></span>
               Listen on {{ link.label }}
             </a>
           }
@@ -553,6 +565,137 @@
               class="flex items-center gap-3 w-full px-5 py-3.5 rounded-xl font-semibold text-sm bg-white/10"
             >
               <span>▶</span> Listen on {{ demo }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </section>
+}
+
+<!-- ─── PODCAST SMART LINK ─────────────────────────────────────────── -->
+@if (section.type === "podcast-smart-link") {
+  <section
+    [style.background-color]="d['bgColor'] || '#0f172a'"
+    [style.color]="d['textColor'] || '#ffffff'"
+    class="px-6 py-14"
+  >
+    <div class="max-w-md mx-auto flex flex-col items-center text-center gap-6">
+      <!-- Episode Pill -->
+      <div
+        (click)="onElementClick($event, 'episodeNumber')"
+        class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 backdrop-blur border border-white/20 cursor-pointer hover:ring-2 hover:ring-indigo-400 hover:scale-105 transition-all"
+        title="Click to edit Episode Number & Release Date"
+      >
+        <span class="w-2 h-2 rounded-full" [style.background-color]="d['accentColor'] || '#6366f1'"></span>
+        <span>Episode {{ d["episodeNumber"] || "1" }}</span>
+        @if (d["releaseDate"]) {
+          <span class="opacity-50">• {{ d["releaseDate"] }}</span>
+        }
+      </div>
+
+      <!-- Podcast Artwork -->
+      <div
+        (click)="onElementClick($event, 'artworkUrl')"
+        class="cursor-pointer hover:ring-4 hover:ring-indigo-400 hover:ring-offset-2 hover:ring-offset-slate-900 rounded-3xl transition-all"
+        title="Click to edit Artwork & Image"
+      >
+        @if (d["artworkUrl"] || d["coverUrl"]) {
+          <img
+            [src]="d['artworkUrl'] || d['coverUrl']"
+            alt="Podcast Artwork"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="high"
+            width="240"
+            height="240"
+            class="w-60 h-60 rounded-3xl object-cover shadow-2xl ring-1 ring-white/10 hover:scale-[1.02] transition-transform duration-300 aspect-square"
+          />
+        } @else {
+          <div
+            class="w-60 h-60 rounded-3xl flex flex-col items-center justify-center text-6xl shadow-2xl ring-1 ring-white/10"
+            [style.background-color]="d['accentColor'] || '#6366f1'"
+          >
+            🎙️
+            <span class="text-xs font-bold tracking-widest mt-2 uppercase opacity-80">Podcast</span>
+          </div>
+        }
+      </div>
+
+      <!-- Title & Host / Guest Info -->
+      <div class="space-y-2 max-w-sm">
+        <h2
+          (click)="onElementClick($event, 'title')"
+          class="text-2xl font-extrabold leading-snug tracking-tight cursor-pointer hover:text-indigo-300 hover:underline transition-all p-1 rounded-lg"
+          title="Click to edit Episode Title"
+        >
+          {{ d["title"] }}
+        </h2>
+        
+        <div
+          (click)="onElementClick($event, 'hostName')"
+          class="flex flex-wrap items-center justify-center gap-2 text-xs font-medium opacity-80 pt-1 cursor-pointer hover:scale-105 transition-transform"
+          title="Click to edit Host & Guest Names"
+        >
+          @if (d["hostName"]) {
+            <span class="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+              🎙️ Host: <strong class="font-semibold">{{ d["hostName"] }}</strong>
+            </span>
+          }
+          @if (d["guestName"]) {
+            <span class="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+              ✨ Guest: <strong class="font-semibold">{{ d["guestName"] }}</strong>
+            </span>
+          }
+        </div>
+
+        @if (d["description"]) {
+          <p
+            (click)="onElementClick($event, 'description')"
+            class="text-xs opacity-70 leading-relaxed pt-2 line-clamp-3 cursor-pointer hover:opacity-100 hover:bg-white/5 p-2 rounded-xl transition-all"
+            title="Click to edit Episode Description"
+          >
+            {{ d["description"] }}
+          </p>
+        }
+      </div>
+
+      <!-- Platform Buttons -->
+      @if (activeLinks.length > 0) {
+        <div class="w-full space-y-3 pt-2">
+          @for (link of activeLinks; track $index) {
+            <a
+              [href]="getAffiliateUrl(link.platform, link.url)"
+              (click)="onElementClick($event, 'platform_' + link.platform); trackPlatformClick(link)"
+              target="_blank"
+              rel="noopener"
+              class="flex items-center justify-between w-full px-5 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-200 hover:scale-[1.02] shadow-lg cursor-pointer hover:ring-2 hover:ring-indigo-400"
+              [style.background-color]="platformBg(link.platform)"
+              [style.color]="platformColor(link.platform)"
+              [title]="'Click to edit ' + link.label + ' link'"
+            >
+              <div class="flex items-center gap-3">
+                <span [innerHTML]="getPlatformIconSvg(link.platform, link.icon)" class="flex items-center justify-center"></span>
+                <span>{{ link.btnLabel || ("Listen on " + (link.label || "Platform")) }}</span>
+              </div>
+              <span class="text-xs opacity-75">Play →</span>
+            </a>
+          }
+        </div>
+      } @else {
+        <div class="w-full space-y-3 opacity-40 pointer-events-none pt-2">
+          @for (
+            demo of ["Apple Podcasts", "Spotify Podcasts", "YouTube Video"];
+            track demo
+          ) {
+            <div
+              class="flex items-center justify-between w-full px-5 py-3.5 rounded-2xl font-semibold text-sm bg-white/10"
+            >
+              <div class="flex items-center gap-3">
+                <span>🎧</span>
+                <span>Listen on {{ demo }}</span>
+              </div>
+              <span class="text-xs opacity-75">Play →</span>
             </div>
           }
         </div>

@@ -9,9 +9,9 @@ const router = express.Router();
 
 // GET /api/leads/manage?projectId=xxx
 router.get("/", async (req, res) => {
-  const { projectId, platform, segment } = req.query;
+  const { projectId, platform, segment, search } = req.query;
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  res.json(await getLeads({ projectId, platform, segment }));
+  res.json(await getLeads({ projectId, platform, segment, search }));
 });
 
 // GET /api/leads/manage/summary?projectId=xxx

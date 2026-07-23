@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal } from "@angular/core";
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { HttpClient } from "@angular/common/http";
@@ -10,9 +10,26 @@ import { Section } from "../../../../core/services/page.service";
   imports: [CommonModule, FormsModule],
   templateUrl: "./properties-panel.component.html",
 })
-export class PropertiesPanelComponent {
+export class PropertiesPanelComponent implements OnChanges {
   @Input() section!: Section;
   @Input() activeTab: "content" | "style" = "content";
+  @Input() focusedField: string | null = null;
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes["focusedField"] && changes["focusedField"].currentValue) {
+      const val = changes["focusedField"].currentValue;
+      setTimeout(() => {
+        const el = document.getElementById("field-" + val) || document.getElementById("field-input-" + val);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.focus();
+          el.classList.add("ring-2", "ring-indigo-500", "ring-offset-1");
+          setTimeout(() => el.classList.remove("ring-2", "ring-indigo-500", "ring-offset-1"), 2000);
+        }
+      }, 50);
+    }
+  }
+
   @Output() tabChange = new EventEmitter<"content" | "style">();
   @Output() dataChange = new EventEmitter<Record<string, unknown>>();
 
@@ -30,7 +47,8 @@ export class PropertiesPanelComponent {
   }
 
   patchItem(key: string, index: number, field: string, value: unknown) {
-    const arr = structuredClone(this.d[key] as any[]);
+    const arr = structuredClone((this.d[key] as any[]) || []);
+    if (!arr[index]) return;
     arr[index] = { ...arr[index], [field]: value };
     this.dataChange.emit({ [key]: arr });
   }
@@ -42,9 +60,40 @@ export class PropertiesPanelComponent {
   }
 
   removeItem(key: string, index: number) {
-    const arr = structuredClone(this.d[key] as any[]);
+    const arr = structuredClone((this.d[key] as any[]) || []);
+    if (index < 0 || index >= arr.length) return;
     arr.splice(index, 1);
     this.dataChange.emit({ [key]: arr });
+  }
+
+  moveItem(key: string, index: number, direction: "up" | "down") {
+    const arr = structuredClone((this.d[key] as any[]) || []);
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= arr.length) return;
+    const temp = arr[index];
+    arr[index] = arr[targetIndex];
+    arr[targetIndex] = temp;
+    this.dataChange.emit({ [key]: arr });
+  }
+
+  addCustomPlatform() {
+    const arr = structuredClone((this.d["links"] as any[]) || []);
+    const newOrder = arr.length + 1;
+    arr.push({
+      platform: "custom",
+      label: "Custom Platform",
+      url: "",
+      btnLabel: "Listen on Custom Platform",
+      icon: "🎧",
+      order: newOrder,
+      active: true,
+    });
+    this.dataChange.emit({ links: arr });
+  }
+
+  isValidUrl(url: string): boolean {
+    if (!url) return true;
+    return /^https?:\/\/.+/i.test(url.trim());
   }
 
   // Footer column links helpers

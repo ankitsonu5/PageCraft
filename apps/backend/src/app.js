@@ -84,10 +84,10 @@ const leadsLimiter = rateLimit({
 });
 
 // ─── PUBLIC ROUTES & HEALTH CHECK ─────────────────
+const prisma = require("./lib/prisma");
+
 app.get("/api/health", async (req, res) => {
   try {
-    const { PrismaClient } = require("@prisma/client");
-    const prisma = new PrismaClient();
     await prisma.$queryRaw`SELECT 1`;
     res.json({
       status: "ok",
@@ -122,6 +122,12 @@ app.use("/api/leads/manage", authMiddleware, leadsManageRouter);
 app.post("/api/upload", authMiddleware, upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   res.json({ url: `/uploads/${req.file.filename}` });
+});
+
+// ─── LEGACY ROUTE REDIRECT (301) ───────────────────
+app.get("/p/:slug", (req, res) => {
+  const slug = String(req.params.slug || "").trim().toLowerCase();
+  res.redirect(301, `/${slug}`);
 });
 
 // ─── ANGULAR STATIC FILES ─────────────────────────

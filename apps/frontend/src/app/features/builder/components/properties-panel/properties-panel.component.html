@@ -1484,6 +1484,285 @@
       }
     }
 
+    <!-- ══════════ PODCAST SMART LINK ══════════ -->
+    @if (section.type === "podcast-smart-link") {
+      @if (activeTab === "content") {
+        <div id="field-artworkUrl">
+          <label class="label">Podcast Artwork</label>
+          <input
+            id="field-input-artworkUrl"
+            class="input mb-2"
+            placeholder="https://... or upload below"
+            [ngModel]="d['artworkUrl'] || d['coverUrl']"
+            (ngModelChange)="patch('artworkUrl', $event)"
+          />
+          <label
+            class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-brand-400 hover:text-brand-500 transition-colors"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+              />
+            </svg>
+            {{ uploading() ? "Uploading..." : "Upload Artwork" }}
+            <input
+              type="file"
+              accept="image/*"
+              class="hidden"
+              [disabled]="uploading()"
+              (change)="uploadImage($event, 'artworkUrl')"
+            />
+          </label>
+          @if (uploadError()) {
+            <p class="text-xs text-red-500 mt-1">{{ uploadError() }}</p>
+          }
+          @if (d["artworkUrl"] || d["coverUrl"]) {
+            <img
+              [src]="d['artworkUrl'] || d['coverUrl']"
+              class="mt-2 w-full rounded-xl object-cover h-32"
+            />
+          }
+        </div>
+
+        <div id="field-title">
+          <label class="label">Episode Title</label>
+          <input
+            id="field-input-title"
+            class="input"
+            [ngModel]="d['title']"
+            (ngModelChange)="patch('title', $event)"
+          />
+        </div>
+
+        <div id="field-episodeNumber" class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Episode Number</label>
+            <input
+              id="field-input-episodeNumber"
+              class="input"
+              placeholder="e.g. 12"
+              [ngModel]="d['episodeNumber']"
+              (ngModelChange)="patch('episodeNumber', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Release Date</label>
+            <input
+              type="date"
+              class="input"
+              [ngModel]="d['releaseDate']"
+              (ngModelChange)="patch('releaseDate', $event)"
+            />
+          </div>
+        </div>
+
+        <div id="field-hostName" class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Host Name</label>
+            <input
+              id="field-input-hostName"
+              class="input"
+              placeholder="e.g. Ashwin Gane"
+              [ngModel]="d['hostName']"
+              (ngModelChange)="patch('hostName', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Guest Name</label>
+            <input
+              class="input"
+              placeholder="e.g. Special Guest"
+              [ngModel]="d['guestName']"
+              (ngModelChange)="patch('guestName', $event)"
+            />
+          </div>
+        </div>
+
+        <div id="field-description">
+          <label class="label">Episode Description</label>
+          <textarea
+            id="field-input-description"
+            class="input min-h-[80px]"
+            rows="3"
+            placeholder="Brief episode overview..."
+            [ngModel]="d['description']"
+            (ngModelChange)="patch('description', $event)"
+          ></textarea>
+        </div>
+
+        <div id="field-ctaText">
+          <label class="label">CTA Button Text</label>
+          <input
+            id="field-input-ctaText"
+            class="input"
+            placeholder="e.g. Listen to Episode"
+            [ngModel]="d['ctaText']"
+            (ngModelChange)="patch('ctaText', $event)"
+          />
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <p class="label mb-0 font-bold">Podcast Streaming Platforms</p>
+            <button
+              (click)="addCustomPlatform()"
+              class="text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline flex items-center gap-1"
+            >
+              <span>+ Add Other Platform</span>
+            </button>
+          </div>
+
+          <div class="space-y-3">
+            @for (link of d["links"]; track $index; let i = $index) {
+              <div [id]="'field-platform_' + link.platform" class="border border-gray-200 rounded-xl p-3 space-y-2 bg-gray-50/60 shadow-2xs">
+                <div class="flex items-center justify-between gap-2">
+                  <label class="flex items-center gap-2 cursor-pointer flex-1">
+                    <input
+                      type="checkbox"
+                      class="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                      [ngModel]="link.active"
+                      (ngModelChange)="patchItem('links', i, 'active', $event)"
+                    />
+                    <span class="text-xs font-bold text-gray-800">{{ link.icon || "🎧" }} {{ link.label }}</span>
+                  </label>
+
+                  <div class="flex items-center gap-1">
+                    <!-- Move Up -->
+                    <button
+                      (click)="moveItem('links', i, 'up')"
+                      [disabled]="i === 0"
+                      class="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-20 rounded"
+                      title="Move Up"
+                    >
+                      ▲
+                    </button>
+                    <!-- Move Down -->
+                    <button
+                      (click)="moveItem('links', i, 'down')"
+                      [disabled]="i === d['links'].length - 1"
+                      class="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-20 rounded"
+                      title="Move Down"
+                    >
+                      ▼
+                    </button>
+                    <!-- Delete -->
+                    <button
+                      (click)="removeItem('links', i)"
+                      class="p-1 text-red-400 hover:text-red-600 rounded ml-1"
+                      title="Delete Platform"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+
+                @if (link.active) {
+                  <div class="space-y-2 pt-1">
+                    <!-- Platform Label & Icon (for custom or editable platforms) -->
+                    @if (link.platform === 'custom') {
+                      <div class="grid grid-cols-3 gap-2">
+                        <div class="col-span-2">
+                          <label class="text-[10px] text-gray-400 font-medium">Platform Name</label>
+                          <input
+                            class="input text-xs"
+                            placeholder="e.g. Overcast"
+                            [ngModel]="link.label"
+                            (ngModelChange)="patchItem('links', i, 'label', $event)"
+                          />
+                        </div>
+                        <div>
+                          <label class="text-[10px] text-gray-400 font-medium">Icon / Emoji</label>
+                          <input
+                            class="input text-xs text-center"
+                            placeholder="🎧"
+                            [ngModel]="link.icon"
+                            (ngModelChange)="patchItem('links', i, 'icon', $event)"
+                          />
+                        </div>
+                      </div>
+                    }
+
+                    <!-- Target URL -->
+                    <div>
+                      <label class="text-[10px] text-gray-400 font-medium">Target URL</label>
+                      <input
+                        class="input text-xs"
+                        [class.border-red-400]="!isValidUrl(link.url)"
+                        placeholder="https://..."
+                        [ngModel]="link.url"
+                        (ngModelChange)="patchItem('links', i, 'url', $event)"
+                      />
+                      @if (link.url && !isValidUrl(link.url)) {
+                        <p class="text-[10px] text-red-500 mt-0.5">Please enter a valid URL starting with http:// or https://</p>
+                      }
+                    </div>
+
+                    <!-- Button Label -->
+                    <div>
+                      <label class="text-[10px] text-gray-400 font-medium">Button Label Text</label>
+                      <input
+                        class="input text-xs"
+                        [placeholder]="'Listen on ' + link.label"
+                        [ngModel]="link.btnLabel"
+                        (ngModelChange)="patchItem('links', i, 'btnLabel', $event)"
+                      />
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <button
+            (click)="addCustomPlatform()"
+            class="w-full mt-3 py-2 px-3 border border-dashed border-gray-300 rounded-xl text-xs font-semibold text-gray-600 hover:border-brand-400 hover:text-brand-600 transition-colors flex items-center justify-center gap-1.5"
+          >
+            <span>+ Add Other / Custom Platform</span>
+          </button>
+        </div>
+      }
+
+      @if (activeTab === "style") {
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">Background</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['bgColor']"
+              (ngModelChange)="patch('bgColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Text Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['textColor']"
+              (ngModelChange)="patch('textColor', $event)"
+            />
+          </div>
+          <div>
+            <label class="label">Accent Color</label>
+            <input
+              type="color"
+              class="h-9 w-full rounded border border-gray-300 p-0.5 cursor-pointer"
+              [ngModel]="d['accentColor']"
+              (ngModelChange)="patch('accentColor', $event)"
+            />
+          </div>
+        </div>
+      }
+    }
+
     @if (section.type === "pre-save") {
       @if (activeTab === "content") {
         <div>

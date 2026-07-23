@@ -11,6 +11,7 @@ export type SectionType =
   | "custom-html"
   | "video-embed"
   | "smart-link"
+  | "podcast-smart-link"
   | "email-fan-gate"
   | "pre-save"
   | "header"
@@ -222,6 +223,86 @@ export function getDefaultData(type: SectionType): Record<string, unknown> {
           { platform: "tidal", label: "Tidal", url: "", active: false },
         ],
       };
+    case "podcast-smart-link":
+      return {
+        artworkUrl: "",
+        title: "Mind Over Matter - Episode 12",
+        episodeNumber: "12",
+        hostName: "Ashwin Gane",
+        guestName: "Special Guest",
+        description:
+          "In this episode, we dive deep into mindset, growth, creative mastery, and overcoming challenges.",
+        releaseDate: new Date().toISOString().split("T")[0],
+        ctaText: "Listen to Episode",
+        bgColor: "#0f172a",
+        textColor: "#ffffff",
+        accentColor: "#6366f1",
+        links: [
+          {
+            platform: "spotify",
+            label: "Spotify",
+            url: "",
+            btnLabel: "Listen on Spotify",
+            icon: "🟢",
+            order: 1,
+            active: true,
+          },
+          {
+            platform: "apple_podcasts",
+            label: "Apple Podcasts",
+            url: "",
+            btnLabel: "Listen on Apple Podcasts",
+            icon: "🟣",
+            order: 2,
+            active: true,
+          },
+          {
+            platform: "youtube",
+            label: "YouTube",
+            url: "",
+            btnLabel: "Watch on YouTube",
+            icon: "🔴",
+            order: 3,
+            active: true,
+          },
+          {
+            platform: "amazon_music",
+            label: "Amazon Music",
+            url: "",
+            btnLabel: "Listen on Amazon Music",
+            icon: "🔵",
+            order: 4,
+            active: true,
+          },
+          {
+            platform: "iheart",
+            label: "iHeartRadio",
+            url: "",
+            btnLabel: "Listen on iHeartRadio",
+            icon: "❤️",
+            order: 5,
+            active: true,
+          },
+          {
+            platform: "player_fm",
+            label: "Player FM",
+            url: "",
+            btnLabel: "Listen on Player FM",
+            icon: "📻",
+            order: 6,
+            active: false,
+          },
+          {
+            platform: "boomplay",
+            label: "Boomplay",
+            url: "",
+            btnLabel: "Listen on Boomplay",
+            icon: "💥",
+            order: 7,
+            active: false,
+          },
+        ],
+      };
     case "email-fan-gate":
       return {
         headline: "Join the Fan Club",
@@ -333,7 +414,8 @@ export const SECTION_ELEMENTS = [
     category: "CONVERSION",
   },
   { type: "video-embed", label: "Video Embed", icon: "▶", category: "MEDIA" },
-  { type: "smart-link", label: "Smart Link", icon: "🎵", category: "MUSIC" },
+  { type: "smart-link", label: "Music Smart Link", icon: "🎵", category: "MUSIC" },
+  { type: "podcast-smart-link", label: "Podcast Smart Link", icon: "🎙️", category: "PODCAST" },
   { type: "pre-save", label: "Pre-Save", icon: "💿", category: "MUSIC" },
   {
     type: "custom-html",
@@ -344,6 +426,16 @@ export const SECTION_ELEMENTS = [
 ];
 
 export const TEMPLATES = [
+  {
+    label: "Podcast Episode Campaign",
+    icon: "🎙️",
+    sections: ["header", "podcast-smart-link", "email-fan-gate", "footer"],
+  },
+  {
+    label: "Podcast Guest Profile",
+    icon: "🎧",
+    sections: ["header", "image-text", "podcast-smart-link", "contact", "footer"],
+  },
   {
     label: "Musician / Artist",
     icon: "🎸",
