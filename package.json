@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "postinstall": "npm run prisma:generate",
+    "prisma:generate": "prisma generate --schema=apps/backend/prisma/schema.prisma",
     "dev:backend": "nodemon apps/backend/src/server.js",
     "dev:frontend": "cd apps/frontend && npx ng serve --proxy-config proxy.conf.json",
     "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"nodemon apps/backend/src/server.js\" \"cd apps/frontend && npx ng serve --proxy-config proxy.conf.json\"",

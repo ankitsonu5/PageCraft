@@ -46,6 +46,12 @@ export const routes: Routes = [
       import("./features/leads/leads.component").then((m) => m.LeadsComponent),
     canActivate: [authGuard],
   },
+  // Automatic legacy /p/:slug redirect to clean /:slug URL
+  {
+    path: "p/:slug",
+    redirectTo: ":slug",
+    pathMatch: "full",
+  },
   {
     path: ":slug",
     loadComponent: () =>

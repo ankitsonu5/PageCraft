@@ -73,6 +73,10 @@ export class DashboardComponent implements OnInit {
     return this.projects().reduce((sum, p) => sum + (p._count?.pages || 0), 0);
   }
 
+  activeProjects() {
+    return this.projects().filter((p) => (p._count?.pages || 0) > 0).length;
+  }
+
   deleteProject(e: Event, id: string) {
     e.stopPropagation();
     if (

@@ -6,10 +6,18 @@ const prisma = new PrismaClient();
 
 async function login(email, password) {
   const admin = await prisma.admin.findUnique({ where: { email } });
-  if (!admin) throw { status: 401, message: "Invalid credentials" };
+  if (!admin) {
+    const error = new Error("Invalid credentials");
+    error.status = 401;
+    throw error;
+  }
 
   const valid = await bcrypt.compare(password, admin.passwordHash);
-  if (!valid) throw { status: 401, message: "Invalid credentials" };
+  if (!valid) {
+    const error = new Error("Invalid credentials");
+    error.status = 401;
+    throw error;
+  }
 
   const token = jwt.sign({ adminId: admin.id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "30d",
@@ -23,7 +31,11 @@ async function login(email, password) {
 
 async function getMe(adminId) {
   const admin = await prisma.admin.findUnique({ where: { id: adminId } });
-  if (!admin) throw { status: 404, message: "Admin not found" };
+  if (!admin) {
+    const error = new Error("Admin not found");
+    error.status = 404;
+    throw error;
+  }
   return { id: admin.id, email: admin.email, name: admin.name };
 }
 

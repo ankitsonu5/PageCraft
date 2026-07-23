@@ -22,12 +22,10 @@ model Project {
   description   String?
   color         String    @default("#534AB7")
   logo          String?
-  defaultHeader Json?
-  defaultFooter Json?
-  // Meta Ads
+  defaultHeader String?
+  defaultFooter String?
   metaPixelId   String?
   metaCapiToken String?
-  // Klaviyo
   klaviyoApiKey String?
   klaviyoListId String?
   createdAt     DateTime  @default(now())
@@ -37,39 +35,69 @@ model Project {
 }
 
 model Page {
-  id               String        @id @default(uuid())
+  id               String         @id @default(uuid())
   projectId        String
-  project          Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project          Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   title            String
-  slug             String        @unique
-  sections         Json          @default("[]")
-  isPublished      Boolean       @default(false)
+  slug             String         @unique
+  campaignType     String         @default("podcast") // podcast, song, album, video, presave, merch, fan_campaign
+  brand            String         @default("ASHWIN_GANE") // MIND_OVER_MATTER, ASHWIN_GANE, KYYBA_MUSIC
+  status           String         @default("PUBLISHED") // DRAFT, PUBLISHED, SCHEDULED
+  artistName       String?
+  episodeNumber    String?
+  guestName        String?
+  hostName         String?
+  ctaType          String?        @default("Listen Now") // Listen Now, Watch Now, Watch or Listen
+  coverImage       String?
+  bgImage          String?
+  releaseDate      DateTime?
+  ctaText          String?        @default("Listen Now")
+  customDomain     String?
+  enableFanForm    Boolean        @default(true)
+  fanFormTitle     String?        @default("Join the Inner Circle")
+  ogImage          String?
+  sections         String         @default("[]")
+  isPublished      Boolean        @default(false)
   publishedAt      DateTime?
   ga4PropertyId    String?
   ga4MeasurementId String?
   ga4StreamId      String?
   metaTitle        String?
   metaDescription  String?
-  // Background
   pageBgColor      String?
   pageBgImage      String?
-  // Retargeting Pixels
   fbPixelId        String?
   googleAdsId      String?
   gtmId            String?
   tiktokPixelId    String?
   snapchatPixelId  String?
-  // Legal
   privacyPolicyUrl String?
   termsUrl         String?
-  // Affiliate
   appleAffCode     String?
   amazonAffCode    String?
   spotifyAffCode   String?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  platformLinks    PlatformLink[]
   linkTrackers     LinkTracker[]
   leads            FanLead[]
+  pageViews        PageView[]
+}
+
+model PlatformLink {
+  id        String     @id @default(uuid())
+  pageId    String
+  page      Page       @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  platform  String     // spotify, apple_podcasts, apple_music, youtube, youtube_music, amazon_music, iheart, pandora, tidal, soundcloud, deezer, audiomack, custom
+  name      String
+  url       String
+  icon      String?
+  order     Int        @default(0)
+  isActive  Boolean    @default(true)
+  clicks    Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  clickLogs ClickLog[]
 }
 
 model LinkTracker {
@@ -85,16 +113,43 @@ model LinkTracker {
   clickLogs ClickLog[]
 }
 
+model PageView {
+  id         String   @id @default(uuid())
+  pageId     String
+  page       Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  ip         String?
+  device     String?
+  browser    String?
+  os         String?
+  country    String?
+  city       String?
+  referer    String?
+  utmSource  String?
+  utmMedium  String?
+  utmCampaign String?
+  utmContent String?
+  viewedAt   DateTime @default(now())
+}
+
 model ClickLog {
-  id        String      @id @default(uuid())
-  trackerId String
-  tracker   LinkTracker @relation(fields: [trackerId], references: [id], onDelete: Cascade)
-  ip        String?
-  city      String?
-  country   String?
-  device    String?
-  referer   String?
-  clickedAt DateTime    @default(now())
+  id             String        @id @default(uuid())
+  trackerId      String?
+  tracker        LinkTracker?  @relation(fields: [trackerId], references: [id], onDelete: Cascade)
+  platformLinkId String?
+  platformLink   PlatformLink? @relation(fields: [platformLinkId], references: [id], onDelete: SetNull)
+  platform       String?
+  ip             String?
+  city           String?
+  country        String?
+  device         String?
+  browser        String?
+  os             String?
+  referer        String?
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  utmContent     String?
+  clickedAt      DateTime      @default(now())
 }
 
 model FanLead {
@@ -105,12 +160,17 @@ model FanLead {
   project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   email         String
   name          String?
+  phone         String?
   platform      String?
   source        String?
   city          String?
   country       String?
   device        String?
+  consent       Boolean  @default(true)
   segment       String   @default("cold")
   klaviyoSynced Boolean  @default(false)
+  utmSource     String?
+  utmMedium     String?
+  utmCampaign   String?
   capturedAt    DateTime @default(now())
 }

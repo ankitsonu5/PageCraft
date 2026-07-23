@@ -54,7 +54,10 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      if (!origin) return cb(null, true);
+      if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) || allowedOrigins.includes(origin)) {
+        return cb(null, true);
+      }
       cb(new Error("Not allowed by CORS"));
     },
     credentials: true,
@@ -80,7 +83,28 @@ const leadsLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// ─── PUBLIC ROUTES ────────────────────────────────
+// ─── PUBLIC ROUTES & HEALTH CHECK ─────────────────
+app.get("/api/health", async (req, res) => {
+  try {
+    const { PrismaClient } = require("@prisma/client");
+    const prisma = new PrismaClient();
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      status: "ok",
+      database: "connected",
+      environment: process.env.NODE_ENV || "development",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      database: "disconnected",
+      error: err.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
 app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth", authRouter);
 app.use("/t", linksRouter);

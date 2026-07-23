@@ -28,7 +28,7 @@ export interface LeadsSummary {
 export class LeadsService {
   private base = `${environment.apiUrl}/leads`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getLeads(
     projectId: string,

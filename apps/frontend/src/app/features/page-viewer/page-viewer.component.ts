@@ -21,7 +21,7 @@ export class PageViewerComponent implements OnInit {
     private route: ActivatedRoute,
     private pageService: PageService,
     @Inject(PLATFORM_ID) private platformId: object,
-  ) {}
+  ) { }
 
   ngOnInit() {
     const slug = this.route.snapshot.paramMap.get("slug")!;

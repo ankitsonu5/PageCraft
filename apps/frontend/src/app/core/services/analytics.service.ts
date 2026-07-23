@@ -59,7 +59,7 @@ export type Period = "today" | "7d" | "30d" | "90d" | "all";
 
 @Injectable({ providedIn: "root" })
 export class AnalyticsService {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   get(pageId: string, period: Period = "30d") {
     return this.http.get<AnalyticsData>(
