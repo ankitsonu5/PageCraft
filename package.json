@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "postinstall": "npm run prisma:generate",
-    "prisma:generate": "prisma generate --schema=apps/backend/prisma/schema.prisma",
+    "prisma:generate": "cd apps/backend && npx prisma generate",
     "dev:backend": "nodemon apps/backend/src/server.js",
     "dev:frontend": "cd apps/frontend && npx ng serve --proxy-config proxy.conf.json",
     "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"nodemon apps/backend/src/server.js\" \"cd apps/frontend && npx ng serve --proxy-config proxy.conf.json\"",
@@ -12,8 +12,9 @@
     "start": "node apps/backend/src/server.js",
     "seed": "node apps/backend/prisma/seed.js",
     "migrate": "cd apps/backend && npx prisma migrate dev",
+    "migrate:deploy": "cd apps/backend && npx prisma migrate deploy",
     "studio": "cd apps/backend && npx prisma studio",
-    "deploy": "npm run build && pm2 restart pagepulse || pm2 start ecosystem.config.js",
+    "deploy": "npm run migrate:deploy && npm run build && (pm2 restart pagepulse || pm2 start ecosystem.config.js)",
     "test": "jest --runInBand --forceExit",
     "test:watch": "jest --watch"
   },
