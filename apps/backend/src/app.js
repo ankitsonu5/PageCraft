@@ -9,6 +9,7 @@ const fs = require("fs");
 const multer = require("multer");
 
 const { authMiddleware } = require("./middleware/auth.middleware");
+const { renderIndexHtml } = require("./utils/tracking-snippet.util");
 const authRouter = require("./modules/auth/auth.router");
 const projectsRouter = require("./modules/projects/projects.router");
 const pagesRouter = require("./modules/pages/pages.router");
@@ -55,7 +56,10 @@ app.use(
   cors({
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-      if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) || allowedOrigins.includes(origin)) {
+      if (
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+        allowedOrigins.includes(origin)
+      ) {
         return cb(null, true);
       }
       cb(new Error("Not allowed by CORS"));
@@ -126,16 +130,23 @@ app.post("/api/upload", authMiddleware, upload.single("file"), (req, res) => {
 
 // ─── LEGACY ROUTE REDIRECT (301) ───────────────────
 app.get("/p/:slug", (req, res) => {
-  const slug = String(req.params.slug || "").trim().toLowerCase();
+  const slug = String(req.params.slug || "")
+    .trim()
+    .toLowerCase();
   res.redirect(301, `/${slug}`);
 });
 
 // ─── ANGULAR STATIC FILES ─────────────────────────
+// index.html always goes through renderIndexHtml so the global GTM snippet is
+// present in the raw HTML of every route (never served raw by express.static).
 const publicDir = path.join(__dirname, "../../frontend/dist/frontend/browser");
-app.use(express.static(publicDir));
-app.get("*", (req, res) => {
-  res.sendFile(path.join(publicDir, "index.html"));
-});
+const sendIndex = (req, res) => {
+  res.set("Cache-Control", "no-cache");
+  res.type("html").send(renderIndexHtml(path.join(publicDir, "index.html")));
+};
+app.get("/index.html", sendIndex);
+app.use(express.static(publicDir, { index: false }));
+app.get("*", sendIndex);
 
 // ─── ERROR HANDLER ────────────────────────────────
 app.use((err, req, res, _next) => {

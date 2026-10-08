@@ -89,10 +89,17 @@ export class PageViewerComponent implements OnInit {
     document.head.appendChild(s);
   }
 
+  /** Tag IDs (GTM-/G-/AW-) already loaded in this document — survives component re-creation. */
+  private get loadedTags(): Set<string> {
+    const w = window as any;
+    return (w.__PC_LOADED_TAGS ||= new Set<string>(w.__PC_GTM_ID ? [w.__PC_GTM_ID] : []));
+  }
+
   private injectGTM(gtmId: string) {
-    if (document.getElementById("gtm-script")) return;
+    // Skip if the same container is already on the page (e.g. the global one injected server-side)
+    if (this.loadedTags.has(gtmId)) return;
+    this.loadedTags.add(gtmId);
     const s = document.createElement("script");
-    s.id = "gtm-script";
     s.innerHTML = `
       (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
       new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -109,22 +116,31 @@ export class PageViewerComponent implements OnInit {
     document.body.insertBefore(ns, document.body.firstChild);
   }
 
-  private injectGoogleAds(conversionId: string) {
-    if (document.getElementById("google-ads-script")) return;
-    const s1 = document.createElement("script");
-    s1.id = "google-ads-script";
-    s1.async = true;
-    s1.src = `https://www.googletagmanager.com/gtag/js?id=${conversionId}`;
-    document.head.appendChild(s1);
-
-    const s2 = document.createElement("script");
-    s2.innerHTML = `
-      window.dataLayer=window.dataLayer||[];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js',new Date());
-      gtag('config','${conversionId}');
-    `;
-    document.head.appendChild(s2);
+  /**
+   * Google tag (gtag.js) for GA4 (G-) and Google Ads (AW-) IDs. gtag.js is
+   * loaded once and gtag('js') runs once; each ID gets exactly one config, so
+   * GA4 + Ads together (or a revisit of the page) never double-load or
+   * double-count page_view.
+   */
+  private injectGoogleTag(tagId: string) {
+    if (this.loadedTags.has(tagId)) return;
+    this.loadedTags.add(tagId);
+    const w = window as any;
+    w.dataLayer = w.dataLayer || [];
+    if (!w.gtag) {
+      w.gtag = function () {
+        w.dataLayer.push(arguments);
+      };
+      w.gtag("js", new Date());
+    }
+    if (!document.getElementById("gtag-js")) {
+      const s = document.createElement("script");
+      s.id = "gtag-js";
+      s.async = true;
+      s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(tagId)}`;
+      document.head.appendChild(s);
+    }
+    w.gtag("config", tagId);
   }
 
   private injectTikTokPixel(pixelId: string) {
@@ -190,28 +206,6 @@ export class PageViewerComponent implements OnInit {
     }
   }
 
-  private injectGA4(mid: string) {
-    const s1 = document.createElement("script");
-    s1.async = true;
-    s1.src = `https://www.googletagmanager.com/gtag/js?id=${mid}`;
-    document.head.appendChild(s1);
-
-    const s2 = document.createElement("script");
-    s2.innerHTML = `
-      window.dataLayer=window.dataLayer||[];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js',new Date());
-      gtag('config','${mid}');
-      document.addEventListener('click',function(e){
-        var a=e.target.closest('a');
-        if(a&&a.href){
-          gtag('event','click',{link_url:a.href,link_text:(a.innerText||'').trim()});
-        }
-      });
-    `;
-    document.head.appendChild(s2);
-  }
-
   private setCanonicalAndMetaTags(data: Page) {
     const pageUrl = getCleanCampaignUrl(data.slug, data.customDomain);
 
@@ -242,10 +236,13 @@ export class PageViewerComponent implements OnInit {
   }
 
   private scheduleDeferredPixelInjection(data: Page) {
+    // Google tags load immediately (not idle-deferred) so the page_view and
+    // early streaming clicks are not lost and Tag Assistant sees them on load.
+    if (data.gtmId) this.injectGTM(data.gtmId.trim());
+    if (data.ga4MeasurementId) this.injectGoogleTag(data.ga4MeasurementId.trim());
+    if (data.googleAdsId) this.injectGoogleTag(data.googleAdsId.trim());
+
     const inject = () => {
-      if (data.ga4MeasurementId) this.injectGA4(data.ga4MeasurementId);
-      if (data.gtmId) this.injectGTM(data.gtmId);
-      if (data.googleAdsId) this.injectGoogleAds(data.googleAdsId);
       if (data.tiktokPixelId) this.injectTikTokPixel(data.tiktokPixelId);
       if (data.snapchatPixelId) this.injectSnapchatPixel(data.snapchatPixelId);
 
