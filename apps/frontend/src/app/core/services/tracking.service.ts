@@ -9,8 +9,10 @@ export interface TrackingConfig {
   metaPixelIds: string[];
   tiktokPixelIds: string[];
   snapchatPixelIds: string[];
-  /** GA4 / Ads are managed inside GTM → do not also load them via gtag.js */
+  /** Global GA4 / Ads live inside GTM (ga4Ids / googleAdsIds then exclude them) */
   googleTagsViaGtm: boolean;
+  /** Page uses "Override Global Tracking" */
+  usingOverride?: boolean;
   /** GTM already present in the server-rendered HTML */
   serverGtmId?: string | null;
 }
@@ -64,14 +66,14 @@ export class TrackingService {
   init(config: TrackingConfig, opts: { consent: boolean }) {
     this.config = config;
     this.consent = opts.consent;
-    if (config.serverGtmId) this.loaded.add(config.serverGtmId);
-
+    // The GTM container in the server-rendered HTML is already registered
+    // (window.__PC_GTM_ID); anything else is loaded here, once.
     config.gtmIds.forEach((id) => this.loadGtm(id));
-    if (!config.googleTagsViaGtm) {
-      [...config.ga4Ids, ...config.googleAdsIds].forEach((id) =>
-        this.loadGoogleTag(id),
-      );
-    }
+    // ga4Ids / googleAdsIds only contain IDs that must be loaded directly —
+    // IDs managed inside GTM are already excluded by the API.
+    [...config.ga4Ids, ...config.googleAdsIds].forEach((id) =>
+      this.loadGoogleTag(id),
+    );
     config.tiktokPixelIds.forEach((id) => this.loadTikTok(id));
     config.snapchatPixelIds.forEach((id) => this.loadSnapchat(id));
     if (this.consent) this.loadMetaPixels();
@@ -91,6 +93,7 @@ export class TrackingService {
 
     const params = {
       ...ctx,
+      page_url: window.location.href.split("#")[0],
       page_location: window.location.href,
       page_path: window.location.pathname,
     };
@@ -263,13 +266,7 @@ export class TrackingService {
     params: Record<string, unknown>,
     sendTo: string[],
   ) {
-    if (
-      !this.config ||
-      this.config.googleTagsViaGtm ||
-      !this.w.gtag ||
-      !sendTo.length
-    )
-      return;
+    if (!this.config || !this.w.gtag || !sendTo.length) return;
     this.w.gtag("event", name, { ...params, send_to: sendTo });
   }
 

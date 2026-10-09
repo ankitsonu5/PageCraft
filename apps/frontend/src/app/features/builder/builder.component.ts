@@ -1,4 +1,8 @@
 import {
+  getReleaseInfo,
+  getSeoDefaults,
+} from "../../core/utils/seo-defaults.util";
+import {
   Component,
   signal,
   computed,
@@ -84,6 +88,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
     gtmId: "",
     tiktokPixelId: "",
     snapchatPixelId: "",
+    trackingOverride: false,
     privacyPolicyUrl: "",
     termsUrl: "",
     appleAffCode: "",
@@ -101,35 +106,19 @@ export class BuilderComponent implements OnInit, OnDestroy {
    * applies them whenever a field is left empty.
    */
   seoDefaults = computed(() => {
-    const release = this.sections().find((s) =>
-      ["smart-link", "pre-save", "podcast-smart-link"].includes(s.type),
-    );
-    const d = (release?.data || {}) as Record<string, string>;
-    const track = (d["title"] || "").trim() || this.pageTitle();
-    const artist =
-      this.artistName().trim() || (d["artist"] || d["hostName"] || "").trim();
-    const isPodcast =
-      release?.type === "podcast-smart-link" || this.campaignType() === "podcast";
-    const isPreSave =
-      release?.type === "pre-save" || this.campaignType() === "presave";
-    const by = artist ? ` by ${artist}` : "";
-    const verb = isPreSave ? "Pre-save" : isPodcast ? "Listen to" : "Stream";
-    const cut = (t: string, n: number) =>
-      t.length > n ? t.slice(0, n - 1).trimEnd() + "…" : t;
-    const title = cut(`${track}${by} | ${isPreSave ? "Pre-Save Now" : "Listen Now"}`, 70);
-    const description = cut(
-      isPodcast
-        ? `${verb} ${track}${by} on Spotify, Apple Podcasts, YouTube and more.`
-        : `${verb} ${track}${by} on Spotify, Apple Music, YouTube Music, Amazon Music and more.`,
-      160,
-    );
+    const release = getReleaseInfo(this.sections(), {
+      title: this.pageTitle(),
+      artistName: this.artistName(),
+      campaignType: this.campaignType(),
+    });
+    const { title, description } = getSeoDefaults(release);
     const s = this.pageSettings();
     return {
       title,
       description,
       ogTitle: s.metaTitle.trim() || title,
       ogDescription: s.metaDescription.trim() || description,
-      image: (d["coverUrl"] || d["artworkUrl"] || "").trim(),
+      image: release.artwork,
     };
   });
 
@@ -189,6 +178,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
         gtmId: page.gtmId || "",
         tiktokPixelId: page.tiktokPixelId || "",
         snapchatPixelId: page.snapchatPixelId || "",
+        trackingOverride: page.trackingOverride === true,
         privacyPolicyUrl: page.privacyPolicyUrl || "",
         termsUrl: page.termsUrl || "",
         appleAffCode: page.appleAffCode || "",
@@ -303,7 +293,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
     this.history.update((h) => h.slice(0, -1));
   }
 
-  patchSettings(field: string, value: string) {
+  patchSettings(field: string, value: string | boolean) {
     this.pageSettings.update((s) => ({ ...s, [field]: value }));
   }
 

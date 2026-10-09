@@ -12,23 +12,49 @@ const clean = (v) => (typeof v === "string" ? v.trim() : "");
 const truncate = (s, max) =>
   s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s;
 
-/** Release info (track, artist, type, artwork) from page fields + its smart-link section. */
+const RELEASE_TYPE_LABELS = { ep: "EP", lp: "LP" };
+
+/** "single" → "Single", "ep" → "EP" (display form used in events). */
+function formatReleaseType(v) {
+  const t = clean(v).replace(/[_-]+/g, " ");
+  if (!t) return "";
+  if (RELEASE_TYPE_LABELS[t.toLowerCase()]) return RELEASE_TYPE_LABELS[t.toLowerCase()];
+  return t.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Release info (track, artist, type, artwork) from page fields + its release
+ * section. When the artist field is empty and the title reads
+ * "Artist - Track" (e.g. "Ashwin Gane - DND"), the two are split.
+ */
 function getReleaseInfo(page) {
   const sections = parseSections(page.sections);
   const release = sections.find((s) => RELEASE_SECTION_TYPES.includes(s?.type));
   const d = release?.data || {};
-  const isPodcast =
-    release?.type === "podcast-smart-link" || page.campaignType === "podcast";
+  // The section type decides podcast vs music; campaignType defaults to
+  // "podcast" in the database, so it is only trusted when there is no section.
+  const isPodcast = release
+    ? release.type === "podcast-smart-link"
+    : page.campaignType === "podcast";
+  const isPreSave = release ? release.type === "pre-save" : page.campaignType === "presave";
+
+  let trackName = clean(d.title) || clean(page.title);
+  let artistName =
+    clean(page.artistName) || clean(d.artist) || (isPodcast ? clean(d.hostName) : "");
+  if (artistName && trackName.toLowerCase().startsWith(`${artistName.toLowerCase()} - `)) {
+    trackName = trackName.slice(artistName.length + 3).trim();
+  } else if (!artistName) {
+    const m = /^(.+?)\s+[-–—]\s+(.+)$/.exec(trackName);
+    if (m && !isPodcast) [, artistName, trackName] = m.map((x) => x.trim());
+  }
+
   return {
-    trackName: clean(d.title) || clean(page.title),
-    artistName: clean(page.artistName) || clean(d.artist) || clean(d.hostName),
-    releaseType:
-      clean(d.releaseType) ||
-      clean(page.campaignType) ||
-      (isPodcast ? "podcast" : "single"),
+    trackName,
+    artistName,
+    releaseType: formatReleaseType(d.releaseType) || (isPodcast ? "Podcast" : "Single"),
     artwork: clean(d.coverUrl) || clean(d.artworkUrl) || clean(page.coverImage),
     isPodcast,
-    isPreSave: release?.type === "pre-save" || page.campaignType === "presave",
+    isPreSave,
   };
 }
 
@@ -47,15 +73,19 @@ function buildSeo(page, origin = "") {
   const r = getReleaseInfo(page);
   const byArtist = r.artistName ? ` by ${r.artistName}` : "";
 
-  const verb = r.isPreSave ? "Pre-save" : r.isPodcast ? "Listen to" : "Stream";
+  // Defaults agreed with Kyyba:
+  //   [Track Name] – [Artist Name] | Listen Now
+  //   Listen to [Track Name] by [Artist Name] on Spotify, Apple Music, YouTube Music, Amazon Music and more.
   const defaultTitle = truncate(
-    `${r.trackName}${byArtist} | ${r.isPreSave ? "Pre-Save Now" : "Listen Now"}`,
+    `${r.trackName}${r.artistName ? ` – ${r.artistName}` : ""} | ${r.isPreSave ? "Pre-Save Now" : "Listen Now"}`,
     70,
   );
   const defaultDescription = truncate(
-    r.isPodcast
-      ? `${verb} ${r.trackName}${byArtist} on Spotify, Apple Podcasts, YouTube and more.`
-      : `${verb} ${r.trackName}${byArtist} on Spotify, Apple Music, YouTube Music, Amazon Music and more.`,
+    r.isPreSave
+      ? `Pre-save ${r.trackName}${byArtist} on Spotify, Apple Music, Amazon Music and more.`
+      : r.isPodcast
+        ? `Listen to ${r.trackName}${byArtist} on Spotify, Apple Podcasts, YouTube and more.`
+        : `Listen to ${r.trackName}${byArtist} on Spotify, Apple Music, YouTube Music, Amazon Music and more.`,
     160,
   );
 
@@ -106,4 +136,4 @@ function buildSeoHeadTags(seo) {
   return tags.filter(Boolean).join("\n");
 }
 
-module.exports = { buildSeo, buildSeoHeadTags, getReleaseInfo, escapeHtml };
+module.exports = { buildSeo, buildSeoHeadTags, getReleaseInfo, formatReleaseType, escapeHtml };

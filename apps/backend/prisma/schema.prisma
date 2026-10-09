@@ -73,6 +73,9 @@ model Page {
   gtmId            String?
   tiktokPixelId    String?
   snapchatPixelId  String?
+  // false (default) = page uses Global AGL Tracking only; true = page-level IDs
+  // replace the global ones (empty page fields still fall back to global)
+  trackingOverride Boolean        @default(false)
   privacyPolicyUrl String?
   termsUrl         String?
   appleAffCode     String?
@@ -163,6 +166,7 @@ model FanLead {
   email         String
   name          String?
   phone         String?
+  message       String?
   platform      String?
   source        String?
   city          String?

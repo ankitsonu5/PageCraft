@@ -14,6 +14,12 @@ export interface TrackingSettings {
   updatedAt?: string;
 }
 
+export interface TrackingStatus {
+  connected: Record<"gtm" | "ga4" | "googleAds" | "meta" | "tiktok" | "snapchat", boolean>;
+  last24h: { pageViews: number; streamingClicks: { platform: string; count: number }[] };
+  recentClicks: { platform: string; device: string | null; clickedAt: string }[];
+}
+
 @Injectable({ providedIn: "root" })
 export class SettingsService {
   private base = `${environment.apiUrl}/settings`;
@@ -22,6 +28,10 @@ export class SettingsService {
 
   getTracking() {
     return this.http.get<TrackingSettings>(`${this.base}/tracking`);
+  }
+
+  getTrackingStatus() {
+    return this.http.get<TrackingStatus>(`${this.base}/tracking/status`);
   }
 
   updateTracking(data: Partial<TrackingSettings>) {

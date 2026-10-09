@@ -11,7 +11,7 @@ const {
   buildSeoHeadTags,
   escapeHtml,
 } = require("../../utils/seo.util");
-const { getTrackingSettings } = require("../settings/settings.service");
+const { getTrackingSettings, buildTrackingConfig } = require("../settings/settings.service");
 const { findPublicPage, requestOrigin } = require("./pages.public.router");
 const { RESERVED_SLUGS } = require("./pages.service");
 
@@ -24,7 +24,8 @@ function clearPageHtmlCache() {
   seoCache.clear();
 }
 
-async function getSeoForPath(req) {
+/** SEO + page tracking flags for a release URL (/:slug), or null for other routes. */
+async function getPageInfoForPath(req) {
   const m = SLUG_PATH_RE.exec(req.path);
   if (!m) return null;
   const slug = m[1].toLowerCase();
@@ -36,7 +37,12 @@ async function getSeoForPath(req) {
   if (hit && Date.now() - hit.at < SEO_CACHE_TTL_MS) return hit.value;
 
   const page = await findPublicPage(slug);
-  const value = page ? buildSeo(page, origin) : null;
+  const value = page
+    ? {
+        seo: buildSeo(page, origin),
+        trackingPage: { trackingOverride: page.trackingOverride, gtmId: page.gtmId },
+      }
+    : null;
   if (seoCache.size >= SEO_CACHE_MAX)
     seoCache.delete(seoCache.keys().next().value);
   seoCache.set(key, { at: Date.now(), value });
@@ -49,10 +55,13 @@ function createIndexHandler(publicDir) {
     let gtmId = null;
     let seo = null;
     try {
-      [{ gtmId }, seo] = await Promise.all([
+      const [global, info] = await Promise.all([
         getTrackingSettings(),
-        getSeoForPath(req),
+        getPageInfoForPath(req),
       ]);
+      seo = info?.seo || null;
+      // Release pages honour "Override Global Tracking"; all other routes use the global container
+      gtmId = buildTrackingConfig(global, info?.trackingPage || {}).gtmIds[0] || null;
     } catch (err) {
       // Never fail the page because tracking/SEO lookup failed
       console.error("[IndexHtml]", err.message);

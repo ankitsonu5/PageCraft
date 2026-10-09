@@ -2,23 +2,23 @@
 @if (section.type === "header") {
   <header
     [style.background-color]="d['bgColor']"
-    class="px-4 sm:px-6 py-3 sm:py-4 border-b border-black/5"
+    class="relative px-4 sm:px-6 py-3 sm:py-4 border-b border-black/5"
   >
-    <div class="max-w-6xl mx-auto flex flex-wrap items-center gap-x-6 gap-y-1">
+    <div class="max-w-6xl mx-auto flex items-center gap-6">
       <!-- Logo -->
-      <div class="flex-shrink-0">
+      <div class="flex-shrink-0 min-w-0">
         @if (d["logoType"] === "image" && d["logoUrl"]) {
           <img [src]="d['logoUrl']" class="h-8 object-contain" alt="Logo" />
         } @else {
           <span
-            class="text-xl font-bold tracking-tight"
+            class="text-xl font-bold tracking-tight truncate"
             [style.color]="d['textColor']"
             >{{ d["logoText"] || "Brand Name" }}</span
           >
         }
       </div>
-      <!-- Nav Links -->
-      <nav class="flex flex-wrap items-center gap-x-4 sm:gap-x-5 flex-1 min-w-0">
+      <!-- Nav Links (desktop / tablet) -->
+      <nav class="hidden md:flex flex-wrap items-center gap-x-5 flex-1 min-w-0">
         @for (link of d["links"]; track $index) {
           <a
             [href]="link.url || '#'"
@@ -28,17 +28,61 @@
           >
         }
       </nav>
-      <!-- CTA -->
+      <!-- CTA (desktop / tablet) -->
       @if (d["ctaText"]) {
         <a
           [href]="d['ctaUrl'] || '#'"
-          class="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90"
+          class="hidden md:inline-block flex-shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90"
           [style.background-color]="d['ctaBgColor'] || '#534AB7'"
           [style.color]="d['ctaTextColor'] || '#ffffff'"
           >{{ d["ctaText"] }}</a
         >
       }
+      <!-- Mobile menu button -->
+      @if (d["links"]?.length || d["ctaText"]) {
+        <button
+          type="button"
+          class="md:hidden ml-auto -mr-2 w-11 h-11 flex items-center justify-center rounded-lg"
+          [style.color]="d['textColor']"
+          [attr.aria-expanded]="menuOpen()"
+          aria-label="Menu"
+          (click)="menuOpen.set(!menuOpen())"
+        >
+          @if (menuOpen()) {
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" /></svg>
+          } @else {
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg>
+          }
+        </button>
+      }
     </div>
+    <!-- Mobile menu panel -->
+    @if (menuOpen()) {
+      <nav
+        class="md:hidden max-w-6xl mx-auto pt-2 pb-1 flex flex-col"
+        [style.background-color]="d['bgColor']"
+      >
+        @for (link of d["links"]; track $index) {
+          <a
+            [href]="link.url || '#'"
+            (click)="menuOpen.set(false)"
+            class="py-3 text-base font-medium border-t border-black/5"
+            [style.color]="d['linkColor'] || d['textColor']"
+            >{{ link.label }}</a
+          >
+        }
+        @if (d["ctaText"]) {
+          <a
+            [href]="d['ctaUrl'] || '#'"
+            (click)="menuOpen.set(false)"
+            class="mt-2 px-4 py-3 rounded-lg text-center text-base font-semibold"
+            [style.background-color]="d['ctaBgColor'] || '#534AB7'"
+            [style.color]="d['ctaTextColor'] || '#ffffff'"
+            >{{ d["ctaText"] }}</a
+          >
+        }
+      </nav>
+    }
   </header>
 }
 
@@ -374,59 +418,88 @@
 
 <!-- ─── CONTACT ───────────────────────────────────────────────────── -->
 @if (section.type === "contact") {
-  <section [style.background-color]="d['bgColor']" class="px-8 py-16">
+  <section [style.background-color]="d['bgColor']" class="px-6 md:px-8 py-12 md:py-16">
     <div class="max-w-xl mx-auto">
       @if (d["title"]) {
         <div class="text-center mb-8">
-          <h2 class="text-3xl font-bold text-gray-900">{{ d["title"] }}</h2>
+          <h2 class="text-2xl md:text-3xl font-bold text-gray-900">{{ d["title"] }}</h2>
           @if (d["subtitle"]) {
             <p class="text-gray-500 mt-2">{{ d["subtitle"] }}</p>
           }
         </div>
       }
-      <div class="space-y-3">
-        @if (d["showName"]) {
-          <input
-            type="text"
-            placeholder="Your Name"
-            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base sm:text-sm focus:outline-none focus:border-brand-500"
-          />
-        }
-        @if (d["showPhone"]) {
-          <input
-            type="tel"
-            placeholder="Phone Number"
-            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base sm:text-sm focus:outline-none focus:border-brand-500"
-          />
-        }
-        @if (d["showEmail"]) {
+      @if (contactSent()) {
+        <div class="rounded-xl bg-green-50 text-green-800 px-4 py-6 text-center font-medium">
+          {{ d["successMessage"] || "Thanks! Your message has been sent." }}
+        </div>
+      } @else {
+        <form class="space-y-3" (ngSubmit)="submitContact()">
+          @if (d["showName"]) {
+            <input
+              type="text"
+              name="contactName"
+              autocomplete="name"
+              placeholder="Your Name"
+              maxlength="120"
+              [ngModel]="contactName()"
+              (ngModelChange)="contactName.set($event)"
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base sm:text-sm text-gray-900 focus:outline-none focus:border-brand-500"
+            />
+          }
+          @if (d["showPhone"]) {
+            <input
+              type="tel"
+              name="contactPhone"
+              autocomplete="tel"
+              placeholder="Phone Number"
+              maxlength="30"
+              [ngModel]="contactPhone()"
+              (ngModelChange)="contactPhone.set($event)"
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base sm:text-sm text-gray-900 focus:outline-none focus:border-brand-500"
+            />
+          }
+          <!-- Email is always required so the team can reply -->
           <input
             type="email"
+            name="contactEmail"
+            autocomplete="email"
+            required
             placeholder="Email Address"
-            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base sm:text-sm focus:outline-none focus:border-brand-500"
+            [ngModel]="contactEmail()"
+            (ngModelChange)="contactEmail.set($event)"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base sm:text-sm text-gray-900 focus:outline-none focus:border-brand-500"
           />
-        }
-        @if (d["showMessage"]) {
-          <textarea
-            rows="4"
-            placeholder="Message"
-            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base sm:text-sm resize-none focus:outline-none focus:border-brand-500"
-          ></textarea>
-        }
-        <button
-          class="w-full py-3 rounded-xl font-semibold text-white text-sm transition-opacity hover:opacity-90"
-          [style.background-color]="d['btnColor']"
-        >
-          {{ d["submitText"] || "Send Message" }}
-        </button>
-      </div>
+          @if (d["showMessage"]) {
+            <textarea
+              rows="4"
+              name="contactMessage"
+              placeholder="Message"
+              maxlength="5000"
+              [ngModel]="contactMessage()"
+              (ngModelChange)="contactMessage.set($event)"
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base sm:text-sm text-gray-900 resize-none focus:outline-none focus:border-brand-500"
+            ></textarea>
+          }
+          @if (contactError()) {
+            <p class="text-sm text-red-600">{{ contactError() }}</p>
+          }
+          <button
+            type="submit"
+            [disabled]="contactSending()"
+            class="w-full py-3 rounded-xl font-semibold text-white text-sm transition-opacity hover:opacity-90 disabled:opacity-60"
+            [style.background-color]="d['btnColor']"
+          >
+            {{ contactSending() ? "Sending…" : d["submitText"] || "Send Message" }}
+          </button>
+        </form>
+      }
     </div>
   </section>
 }
 
 <!-- ─── TEXT BLOCK ────────────────────────────────────────────────── -->
 @if (section.type === "text") {
-  <section class="px-8 py-12">
+  <section class="px-6 md:px-8 py-12">
     <div
       class="mx-auto prose"
       [style.max-width.px]="d['maxWidth'] || 800"
@@ -543,7 +616,8 @@
             <a
               [href]="getAffiliateUrl(link.platform, link.url)"
               [attr.data-platform]="link.platform"
-              (click)="onElementClick($event, 'platform_' + link.platform); trackPlatformClick(link)"
+              [attr.data-platform-label]="link.label"
+              (click)="onElementClick($event, 'platform_' + link.platform)"
               target="_blank"
               rel="noopener"
               class="flex items-center gap-3 w-full px-5 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-[1.02] shadow-lg cursor-pointer"
@@ -668,7 +742,8 @@
             <a
               [href]="getAffiliateUrl(link.platform, link.url)"
               [attr.data-platform]="link.platform"
-              (click)="onElementClick($event, 'platform_' + link.platform); trackPlatformClick(link)"
+              [attr.data-platform-label]="link.label"
+              (click)="onElementClick($event, 'platform_' + link.platform)"
               target="_blank"
               rel="noopener"
               class="flex items-center justify-between w-full px-5 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-200 hover:scale-[1.02] shadow-lg cursor-pointer hover:ring-2 hover:ring-indigo-400"

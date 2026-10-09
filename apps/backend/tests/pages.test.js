@@ -300,8 +300,9 @@ describe("GET /api/public/pages/:slug (public)", () => {
     expect(res.body.slug).toBe("heart-surgery");
     expect(res.body.tracking.gtmIds).toEqual(["GTM-GLOBAL1"]);
     expect(res.body.tracking.ga4Ids).toEqual(["G-GLOBAL123"]);
-    expect(res.body.tracking.metaPixelIds).toEqual(["111111", "222222"]);
-    expect(res.body.seo.title).toBe("Heartbeat by Ashwin Gane | Listen Now");
+    // page-level fbPixelId is ignored unless the page overrides global tracking
+    expect(res.body.tracking.metaPixelIds).toEqual(["111111"]);
+    expect(res.body.seo.title).toBe("Heartbeat – Ashwin Gane | Listen Now");
     expect(res.body.seo.ogTitle).toBe(res.body.seo.title);
   });
 

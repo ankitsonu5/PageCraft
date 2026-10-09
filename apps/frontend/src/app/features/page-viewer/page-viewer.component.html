@@ -18,7 +18,9 @@
 }
 
 @if (!loading && !notFound && page) {
-<div id="page-viewer-wrapper" class="min-h-screen bg-white">
+<!-- While the consent banner is open, reserve space so it never covers the last button -->
+<div id="page-viewer-wrapper" class="min-h-screen bg-white"
+  [class.pb-48]="showConsentBanner()" [class.sm:pb-24]="showConsentBanner()">
   @for (section of page.sections; track section.id) {
   <app-section-renderer [section]="section" [pageId]="page.id" [affiliateCodes]="{
           apple: page.appleAffCode,

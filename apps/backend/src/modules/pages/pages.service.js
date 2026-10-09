@@ -190,6 +190,7 @@ async function updatePage(id, data) {
     gtmId,
     tiktokPixelId,
     snapchatPixelId,
+    trackingOverride,
     privacyPolicyUrl,
     termsUrl,
     appleAffCode,
@@ -268,6 +269,7 @@ async function updatePage(id, data) {
       ...(gtmId !== undefined && { gtmId }),
       ...(tiktokPixelId !== undefined && { tiktokPixelId }),
       ...(snapchatPixelId !== undefined && { snapchatPixelId }),
+      ...(trackingOverride !== undefined && { trackingOverride: Boolean(trackingOverride) }),
       ...(privacyPolicyUrl !== undefined && { privacyPolicyUrl }),
       ...(termsUrl !== undefined && { termsUrl }),
       ...(appleAffCode !== undefined && { appleAffCode }),
@@ -372,6 +374,8 @@ async function duplicatePage(id) {
       metaDescription: src.metaDescription,
       pageBgColor: src.pageBgColor,
       pageBgImage: src.pageBgImage,
+      ogTitle: src.ogTitle,
+      ogDescription: src.ogDescription,
       platformLinks: {
         create: (src.platformLinks || []).map((link) => ({
           platform: link.platform,

@@ -3,12 +3,15 @@ const geoip = require("geoip-lite");
 const UAParser = require("ua-parser-js");
 const router = express.Router();
 const prisma = require("../../lib/prisma");
+const { sendCAPIEvent } = require("../../utils/meta-capi.util");
+const { sendLeadNotification } = require("../../utils/mailer.util");
+const { addToKlaviyoList } = require("../../utils/klaviyo.util");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // POST /api/leads  — public, fan email submit from published page
 router.post("/", async (req, res) => {
-  const { pageId, email, name, phone, consent, country: customCountry, platform, source } = req.body;
+  const { pageId, email, name, phone, message, consent, country: customCountry, platform, source } = req.body;
 
   if (!pageId || !email) {
     return res.status(400).json({ error: "pageId and email are required" });
@@ -22,6 +25,10 @@ router.post("/", async (req, res) => {
   if (phone && (typeof phone !== "string" || phone.length > 30)) {
     return res.status(400).json({ error: "Invalid phone number" });
   }
+  if (message && (typeof message !== "string" || message.length > 5000)) {
+    return res.status(400).json({ error: "Message is too long" });
+  }
+  const isContact = source === "contact-form";
 
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -29,7 +36,7 @@ router.post("/", async (req, res) => {
     where: { id: pageId },
     include: { project: true },
   });
-  if (!page || !page.isPublished) {
+  if (!page || (!page.isPublished && page.status !== "PUBLISHED")) {
     return res.status(404).json({ error: "Page not found" });
   }
 
@@ -38,7 +45,8 @@ router.post("/", async (req, res) => {
     where: { pageId, email: normalizedEmail },
     select: { id: true },
   });
-  if (existing) {
+  // Contact-form messages are never deduplicated — each message is kept
+  if (existing && !isContact) {
     return res.json({ success: true, message: "Subscribed successfully" });
   }
 
@@ -55,6 +63,7 @@ router.post("/", async (req, res) => {
       email: normalizedEmail,
       name: name ? String(name).trim().slice(0, 120) : null,
       phone: phone ? String(phone).trim().slice(0, 30) : null,
+      message: message ? String(message).trim().slice(0, 5000) : null,
       consent: consent !== undefined ? Boolean(consent) : true,
       platform: platform ? String(platform).slice(0, 50) : null,
       source: source ? String(source).slice(0, 50) : "direct",

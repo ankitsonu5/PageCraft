@@ -61,3 +61,33 @@ export function detectStreamingPlatform(
   }
   return null;
 }
+
+/** Display names sent as the `platform` event parameter (e.g. "Spotify"). */
+const PLATFORM_LABELS: Record<string, string> = {
+  spotify: "Spotify",
+  apple_music: "Apple Music",
+  apple_podcasts: "Apple Podcasts",
+  youtube_music: "YouTube Music",
+  youtube: "YouTube",
+  amazon_music: "Amazon Music",
+  jiosaavn: "JioSaavn",
+  gaana: "Gaana",
+  deezer: "Deezer",
+  soundcloud: "SoundCloud",
+  tidal: "Tidal",
+  iheart: "iHeartRadio",
+  pandora: "Pandora",
+  audiomack: "Audiomack",
+  boomplay: "Boomplay",
+  player_fm: "Player FM",
+  wynk: "Wynk Music",
+  anghami: "Anghami",
+};
+
+export function platformLabel(platform: string, fallback?: string): string {
+  return (
+    PLATFORM_LABELS[platform] ||
+    (fallback || "").trim() ||
+    platform.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+  );
+}

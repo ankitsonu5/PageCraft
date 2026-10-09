@@ -17,7 +17,10 @@ import {
 } from "../../core/services/tracking.service";
 import { SectionRendererComponent } from "../builder/components/section-renderer/section-renderer.component";
 import { getCleanCampaignUrl } from "../../core/utils/url.util";
-import { detectStreamingPlatform } from "../../core/utils/streaming-platform.util";
+import {
+  detectStreamingPlatform,
+  platformLabel,
+} from "../../core/utils/streaming-platform.util";
 
 @Component({
   selector: "app-page-viewer",
@@ -99,8 +102,23 @@ export class PageViewerComponent implements OnInit, OnDestroy {
     if (!a || !a.href) return;
     const platform = detectStreamingPlatform(a.href, a.dataset["platform"]);
     if (!platform) return;
+    const label = platformLabel(platform, a.dataset["platformLabel"]);
+    // First-party click log (powers Analytics + Settings → Tracking Status)
+    const q = this.route.snapshot.queryParams;
+    this.pageService
+      .trackClick({
+        pageId: this.page!.id,
+        platform: label,
+        referrer: document.referrer || undefined,
+        utmSource: q["utm_source"] || undefined,
+        utmMedium: q["utm_medium"] || undefined,
+        utmCampaign: q["utm_campaign"] || undefined,
+        utmContent: q["utm_content"] || undefined,
+      })
+      .subscribe({ error: () => {} });
     this.tracking.streamingClick(this.release, {
-      platform,
+      // Display name, e.g. "Spotify"; unknown/future platforms use the button label
+      platform: label,
       destination_url: a.href,
       link_text: (a.innerText || "").trim().slice(0, 100),
     });

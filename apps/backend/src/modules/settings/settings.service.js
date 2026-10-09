@@ -95,29 +95,43 @@ function clearTrackingSettingsCache() {
 }
 
 /**
- * Effective tracking config for a page: global IDs plus any page-level IDs
- * (special-campaign overrides). Duplicates are removed, so the same ID set at
- * both levels loads once.
+ * Effective tracking config for a page.
+ *
+ * Default: the page uses Global AGL Tracking only (page-level IDs are ignored).
+ * With page.trackingOverride = true, each page-level ID that is filled in
+ * replaces the global one; empty page fields still fall back to global.
+ *
+ * ga4Ids / googleAdsIds are the IDs the browser must load directly via
+ * gtag.js. When the global GA4/Ads tags live inside the global GTM container
+ * (googleTagsViaGtm), they are left out so nothing is counted twice.
  */
 function buildTrackingConfig(global, page = {}) {
-  const uniq = (...ids) => [
-    ...new Set(ids.map((x) => (x ? String(x).trim() : "")).filter(Boolean)),
-  ];
+  const override = page.trackingOverride === true;
+  const clean = (v) => (v ? String(v).trim() : "");
+  const pick = (pageVal, globalVal) =>
+    (override && clean(pageVal)) || clean(globalVal) || null;
+  const list = (v) => (v ? [v] : []);
+
+  const gtmId = pick(page.gtmId, global.gtmId);
+  const ga4 = pick(page.ga4MeasurementId, global.ga4MeasurementId);
+  const ads = pick(page.googleAdsId, global.googleAdsId);
+  // Global GA4/Ads are inside GTM only if this page actually uses the global container
+  const viaGtm = Boolean(global.googleTagsViaGtm && global.gtmId && gtmId === clean(global.gtmId));
+  const direct = (id, globalId) => (id && !(viaGtm && id === clean(globalId)) ? [id] : []);
+
   return {
-    gtmIds: uniq(global.gtmId, page.gtmId),
-    ga4Ids: uniq(global.ga4MeasurementId, page.ga4MeasurementId),
-    googleAdsIds: uniq(global.googleAdsId, page.googleAdsId),
-    googleAdsConversionLabel: global.googleAdsConversionLabel || null,
-    metaPixelIds: uniq(
-      global.metaPixelId,
-      page.project?.metaPixelId,
-      page.fbPixelId,
-    ),
-    tiktokPixelIds: uniq(global.tiktokPixelId, page.tiktokPixelId),
-    snapchatPixelIds: uniq(global.snapchatPixelId, page.snapchatPixelId),
-    googleTagsViaGtm: Boolean(global.googleTagsViaGtm && global.gtmId),
-    // GTM that is already in the server-rendered HTML — the client must not load it again
-    serverGtmId: global.gtmId || null,
+    usingOverride: override,
+    gtmIds: list(gtmId),
+    ga4Ids: direct(ga4, global.ga4MeasurementId),
+    googleAdsIds: direct(ads, global.googleAdsId),
+    googleAdsConversionLabel:
+      ads && ads === clean(global.googleAdsId) ? global.googleAdsConversionLabel || null : null,
+    metaPixelIds: list(pick(page.fbPixelId, global.metaPixelId || page.project?.metaPixelId)),
+    tiktokPixelIds: list(pick(page.tiktokPixelId, global.tiktokPixelId)),
+    snapchatPixelIds: list(pick(page.snapchatPixelId, global.snapchatPixelId)),
+    googleTagsViaGtm: viaGtm,
+    // GTM container rendered into this page's HTML by the server
+    serverGtmId: gtmId,
   };
 }
 

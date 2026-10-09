@@ -63,6 +63,7 @@ export interface Page {
   gtmId?: string;
   tiktokPixelId?: string;
   snapchatPixelId?: string;
+  trackingOverride?: boolean;
   privacyPolicyUrl?: string;
   termsUrl?: string;
   appleAffCode?: string;

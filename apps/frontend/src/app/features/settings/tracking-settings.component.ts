@@ -5,6 +5,7 @@ import { RouterModule } from "@angular/router";
 import {
   SettingsService,
   TrackingSettings,
+  TrackingStatus,
 } from "../../core/services/settings.service";
 
 type IdField = Exclude<
@@ -130,6 +131,46 @@ interface FieldDef {
             </div>
           </form>
 
+          <!-- Tracking Status -->
+          @if (status(); as st) {
+            <div class="card p-5 sm:p-6 mt-6 text-sm">
+              <div class="flex items-center justify-between mb-3">
+                <p class="font-semibold text-gray-900">Tracking Status</p>
+                <button type="button" class="text-xs text-brand-600" (click)="loadStatus()">Refresh</button>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+                @for (c of statusRows; track c.key) {
+                  <div
+                    class="rounded-lg px-3 py-2 text-xs font-medium"
+                    [class]="st.connected[c.key] ? 'bg-green-50 text-green-800' : 'bg-gray-100 text-gray-500'"
+                  >
+                    {{ st.connected[c.key] ? "✓" : "–" }} {{ c.label }}
+                    {{ st.connected[c.key] ? "configured" : "not set" }}
+                  </div>
+                }
+              </div>
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Last 24 hours (AGL's own log)</p>
+              <p class="text-gray-700">✓ page_view — {{ st.last24h.pageViews }}</p>
+              @for (c of st.last24h.streamingClicks; track c.platform) {
+                <p class="text-gray-700">✓ streaming_click — {{ c.platform }} ({{ c.count }})</p>
+              } @empty {
+                <p class="text-gray-400">No streaming clicks yet</p>
+              }
+              @if (st.recentClicks.length) {
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4 mb-2">Recent clicks</p>
+                @for (c of st.recentClicks; track $index) {
+                  <p class="text-xs text-gray-500">
+                    {{ c.clickedAt | date: "short" }} · {{ c.platform }} · {{ c.device || "desktop" }}
+                  </p>
+                }
+              }
+              <p class="text-[11px] text-gray-400 mt-3">
+                "Configured" means the ID is set here. Whether GA4 / Google Ads receive the hits is
+                verified in GTM Preview, GA4 DebugView and Google Ads → Tag diagnostics.
+              </p>
+            </div>
+          }
+
           <div class="card p-5 sm:p-6 mt-6 text-sm text-gray-600 space-y-2">
             <p class="font-semibold text-gray-900">Events sent automatically</p>
             <p>
@@ -219,7 +260,25 @@ export class TrackingSettingsComponent implements OnInit {
 
   constructor(private settings: SettingsService) {}
 
+  status = signal<TrackingStatus | null>(null);
+  readonly statusRows: { key: keyof TrackingStatus["connected"]; label: string }[] = [
+    { key: "gtm", label: "GTM" },
+    { key: "ga4", label: "GA4" },
+    { key: "googleAds", label: "Google Ads" },
+    { key: "meta", label: "Meta Pixel" },
+    { key: "tiktok", label: "TikTok" },
+    { key: "snapchat", label: "Snapchat" },
+  ];
+
+  loadStatus() {
+    this.settings.getTrackingStatus().subscribe({
+      next: (s) => this.status.set(s),
+      error: () => this.status.set(null),
+    });
+  }
+
   ngOnInit() {
+    this.loadStatus();
     this.settings.getTracking().subscribe({
       next: (s) => {
         this.form.set(s);
@@ -263,6 +322,7 @@ export class TrackingSettingsComponent implements OnInit {
       next: (s) => {
         this.form.set(s);
         this.saving.set(false);
+        this.loadStatus();
         this.saved.set(true);
         setTimeout(() => this.saved.set(false), 2500);
       },

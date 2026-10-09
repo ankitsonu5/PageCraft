@@ -70,6 +70,49 @@ export class SectionRendererComponent {
     });
   }
 
+  // Contact form state
+  contactName = signal("");
+  contactPhone = signal("");
+  contactEmail = signal("");
+  contactMessage = signal("");
+  contactSending = signal(false);
+  contactSent = signal(false);
+  contactError = signal("");
+
+  /** Contact section → saved as a lead (source "contact-form") with the message. */
+  submitContact() {
+    if (this.editable) return;
+    const email = this.contactEmail().trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      this.contactError.set("Please enter a valid email address.");
+      return;
+    }
+    if (!this.pageId) return;
+    this.contactSending.set(true);
+    this.contactError.set("");
+    const payload: Record<string, string> = {
+      pageId: this.pageId,
+      email,
+      source: "contact-form",
+    };
+    if (this.contactName().trim()) payload["name"] = this.contactName().trim();
+    if (this.contactPhone().trim()) payload["phone"] = this.contactPhone().trim();
+    if (this.contactMessage().trim()) payload["message"] = this.contactMessage().trim();
+    this.http.post("/api/leads", payload).subscribe({
+      next: () => {
+        this.contactSending.set(false);
+        this.contactSent.set(true);
+      },
+      error: (err) => {
+        this.contactSending.set(false);
+        this.contactError.set(err?.error?.error || "Something went wrong. Please try again.");
+      },
+    });
+  }
+
+  // Mobile menu (header section)
+  menuOpen = signal(false);
+
   get d(): Record<string, any> {
     return this.section.data as Record<string, any>;
   }
@@ -150,18 +193,10 @@ export class SectionRendererComponent {
 
   get activeLinks(): any[] {
     const links = (this.d["links"] as any[]) || [];
-    return links.filter((l) => l.active !== false);
-  }
-
-  trackPlatformClick(link: any) {
-    if (!this.pageId) return;
-    this.http
-      .post("/api/public/track-click", {
-        pageId: this.pageId,
-        platformLinkId: link.id || null,
-        platform: link.platform || link.label || "custom",
-      })
-      .subscribe({ error: () => {} });
+    // On live pages a button without a URL would be a dead link — hide it
+    return links.filter(
+      (l) => l.active !== false && (this.editable || !!String(l.url || "").trim()),
+    );
   }
 
   platformBg(platform: string): string {

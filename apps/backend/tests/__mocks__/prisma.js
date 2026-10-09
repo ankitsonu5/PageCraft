@@ -27,8 +27,13 @@ const prismaMock = {
     update: jest.fn(),
     delete: jest.fn(),
   },
+  pageView: {
+    create: jest.fn(),
+    count: jest.fn(),
+  },
   clickLog: {
     create: jest.fn(),
+    findMany: jest.fn(),
     count: jest.fn(),
     groupBy: jest.fn(),
   },
