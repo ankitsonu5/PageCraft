@@ -1,4 +1,5 @@
 const prisma = require("../../lib/prisma");
+const { getTrackingSettings } = require("../settings/settings.service");
 
 const RESERVED_SLUGS = [
   "admin",
@@ -178,6 +179,8 @@ async function updatePage(id, data) {
     ogImage,
     metaTitle,
     metaDescription,
+    ogTitle,
+    ogDescription,
     pageBgColor,
     pageBgImage,
     fbPixelId,
@@ -252,6 +255,8 @@ async function updatePage(id, data) {
       ...(ogImage !== undefined && { ogImage }),
       ...(metaTitle !== undefined && { metaTitle }),
       ...(metaDescription !== undefined && { metaDescription }),
+      ...(ogTitle !== undefined && { ogTitle }),
+      ...(ogDescription !== undefined && { ogDescription }),
       ...(pageBgColor !== undefined && { pageBgColor }),
       ...(pageBgImage !== undefined && { pageBgImage }),
       ...(fbPixelId !== undefined && { fbPixelId }),
@@ -289,7 +294,10 @@ async function publishPage(pageId) {
     ga4StreamId: page.ga4StreamId,
   };
 
-  if (!page.ga4MeasurementId && typeof createGA4Property === "function") {
+  // A global GA4 property (Settings → Tracking & Analytics) covers every page,
+  // so per-page GA4 properties are only auto-created when none is configured.
+  const { ga4MeasurementId: globalGa4 } = await getTrackingSettings();
+  if (!globalGa4 && !page.ga4MeasurementId && typeof createGA4Property === "function") {
     try {
       const result = await createGA4Property({
         pageTitle: page.title,
@@ -381,6 +389,7 @@ async function deletePage(id) {
 }
 
 module.exports = {
+  RESERVED_SLUGS,
   listPages,
   getPage,
   createPage,

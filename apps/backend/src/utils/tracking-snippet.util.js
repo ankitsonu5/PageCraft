@@ -43,17 +43,30 @@ function injectTracking(html, gtmId) {
     .replace(/<body([^>]*)>/i, (m) => `${m}\n${buildBodySnippet(gtmId)}`);
 }
 
-let cache = { mtimeMs: 0, gtmId: null, html: "" };
+let cache = { mtimeMs: 0, raw: "" };
 
-/** Read index.html (re-read only when the build changes) and inject tracking. */
-function renderIndexHtml(indexPath) {
+function readIndex(indexPath) {
   const { mtimeMs } = fs.statSync(indexPath);
-  const gtmId = getGlobalGtmId();
-  if (cache.mtimeMs !== mtimeMs || cache.gtmId !== gtmId) {
-    const raw = fs.readFileSync(indexPath, "utf8");
-    cache = { mtimeMs, gtmId, html: injectTracking(raw, gtmId) };
+  if (cache.mtimeMs !== mtimeMs) {
+    cache = { mtimeMs, raw: fs.readFileSync(indexPath, "utf8") };
   }
-  return cache.html;
+  return cache.raw;
+}
+
+/**
+ * index.html with the global GTM snippet and (for release pages) server-rendered
+ * <title> + SEO / Open Graph tags, so crawlers and Tag Assistant see them
+ * without running JavaScript.
+ */
+function renderIndexHtml(indexPath, { gtmId = null, title = null, headTags = "" } = {}) {
+  let html = injectTracking(readIndex(indexPath), gtmId);
+  if (title) {
+    html = html.replace(/<title>[\s\S]*?<\/title>/i, () => `<title>${title}</title>`);
+  }
+  if (headTags) {
+    html = html.replace(/<\/head>/i, () => `${headTags}\n</head>`);
+  }
+  return html;
 }
 
 module.exports = { getGlobalGtmId, injectTracking, renderIndexHtml };

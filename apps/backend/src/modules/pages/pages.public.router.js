@@ -2,12 +2,14 @@ const express = require("express");
 const geoip = require("geoip-lite");
 const UAParser = require("ua-parser-js");
 const prisma = require("../../lib/prisma");
+const { getTrackingSettings, buildTrackingConfig } = require("../settings/settings.service");
+const { buildSeo } = require("../../utils/seo.util");
 const router = express.Router();
 
-// GET /api/public/pages/:slug — served to public landing page viewer
-router.get("/pages/:slug", async (req, res) => {
-  const rawSlug = String(req.params.slug || "").trim().toLowerCase();
-
+/** Published page by slug (case-insensitive), or null. Shared with the HTML renderer. */
+async function findPublicPage(slug) {
+  const rawSlug = String(slug || "").trim().toLowerCase();
+  if (!rawSlug) return null;
   const page = await prisma.page.findFirst({
     where: {
       slug: { equals: rawSlug, mode: "insensitive" },
@@ -25,12 +27,29 @@ router.get("/pages/:slug", async (req, res) => {
       },
     },
   });
+  if (!page || (!page.isPublished && page.status !== "PUBLISHED")) return null;
+  return page;
+}
 
-  if (!page || (!page.isPublished && page.status !== "PUBLISHED")) {
+/** Public origin the visitor used (works behind nginx / Cloudflare). */
+function requestOrigin(req) {
+  const host = req.get("x-forwarded-host") || req.get("host");
+  return host ? `${req.protocol}://${host}` : "";
+}
+
+// GET /api/public/pages/:slug — served to public landing page viewer
+router.get("/pages/:slug", async (req, res) => {
+  const page = await findPublicPage(req.params.slug);
+  if (!page) {
     return res.status(404).json({ error: "Page not found or not published" });
   }
 
-  res.json(page);
+  const global = await getTrackingSettings();
+  res.json({
+    ...page,
+    tracking: buildTrackingConfig(global, page),
+    seo: buildSeo(page, requestOrigin(req)),
+  });
 });
 
 // POST /api/public/track-view — log landing page visit
@@ -128,3 +147,5 @@ router.post("/track-click", async (req, res) => {
 });
 
 module.exports = router;
+module.exports.findPublicPage = findPublicPage;
+module.exports.requestOrigin = requestOrigin;

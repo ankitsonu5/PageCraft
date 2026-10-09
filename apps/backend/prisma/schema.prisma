@@ -64,6 +64,8 @@ model Page {
   ga4StreamId      String?
   metaTitle        String?
   metaDescription  String?
+  ogTitle          String?
+  ogDescription    String?
   pageBgColor      String?
   pageBgImage      String?
   fbPixelId        String?
@@ -173,4 +175,21 @@ model FanLead {
   utmMedium     String?
   utmCampaign   String?
   capturedAt    DateTime @default(now())
+}
+
+// Global (AGL-wide) tracking configuration — singleton row with id "global".
+// Every published page inherits it; page-level IDs on Page are added on top.
+model TrackingSettings {
+  id                       String   @id @default("global")
+  gtmId                    String?
+  ga4MeasurementId         String?
+  googleAdsId              String?
+  googleAdsConversionLabel String?
+  metaPixelId              String?
+  tiktokPixelId            String?
+  snapchatPixelId          String?
+  // true = GA4 / Google Ads tags are configured inside the GTM container, so the
+  // app must not also load them via gtag.js (prevents double counting)
+  googleTagsViaGtm         Boolean  @default(false)
+  updatedAt                DateTime @updatedAt
 }
