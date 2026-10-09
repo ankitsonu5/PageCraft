@@ -74,6 +74,8 @@ export class BuilderComponent implements OnInit, OnDestroy {
   pageSettings = signal({
     metaTitle: "",
     metaDescription: "",
+    ogTitle: "",
+    ogDescription: "",
     ogImage: "",
     pageBgColor: "",
     pageBgImage: "",
@@ -90,6 +92,46 @@ export class BuilderComponent implements OnInit, OnDestroy {
   });
   savingSettings = signal(false);
   settingsSaved = signal(false);
+  settingsError = signal("");
+  artistName = signal("");
+  campaignType = signal("");
+
+  /**
+   * SEO defaults shown as placeholders — mirrors the server (seo.util.js), which
+   * applies them whenever a field is left empty.
+   */
+  seoDefaults = computed(() => {
+    const release = this.sections().find((s) =>
+      ["smart-link", "pre-save", "podcast-smart-link"].includes(s.type),
+    );
+    const d = (release?.data || {}) as Record<string, string>;
+    const track = (d["title"] || "").trim() || this.pageTitle();
+    const artist =
+      this.artistName().trim() || (d["artist"] || d["hostName"] || "").trim();
+    const isPodcast =
+      release?.type === "podcast-smart-link" || this.campaignType() === "podcast";
+    const isPreSave =
+      release?.type === "pre-save" || this.campaignType() === "presave";
+    const by = artist ? ` by ${artist}` : "";
+    const verb = isPreSave ? "Pre-save" : isPodcast ? "Listen to" : "Stream";
+    const cut = (t: string, n: number) =>
+      t.length > n ? t.slice(0, n - 1).trimEnd() + "…" : t;
+    const title = cut(`${track}${by} | ${isPreSave ? "Pre-Save Now" : "Listen Now"}`, 70);
+    const description = cut(
+      isPodcast
+        ? `${verb} ${track}${by} on Spotify, Apple Podcasts, YouTube and more.`
+        : `${verb} ${track}${by} on Spotify, Apple Music, YouTube Music, Amazon Music and more.`,
+      160,
+    );
+    const s = this.pageSettings();
+    return {
+      title,
+      description,
+      ogTitle: s.metaTitle.trim() || title,
+      ogDescription: s.metaDescription.trim() || description,
+      image: (d["coverUrl"] || d["artworkUrl"] || "").trim(),
+    };
+  });
 
   elements = SECTION_ELEMENTS;
   templates = TEMPLATES;
@@ -128,6 +170,8 @@ export class BuilderComponent implements OnInit, OnDestroy {
     this.pageId.set(id);
     this.pageService.get(id).subscribe((page) => {
       this.pageTitle.set(page.title);
+      this.artistName.set(page.artistName || "");
+      this.campaignType.set(page.campaignType || "");
       this.pageSlug.set(page.slug);
       this.projectId.set(page.projectId);
       this.sections.set((page.sections as Section[]) || []);
@@ -135,6 +179,8 @@ export class BuilderComponent implements OnInit, OnDestroy {
       this.pageSettings.set({
         metaTitle: page.metaTitle || "",
         metaDescription: page.metaDescription || "",
+        ogTitle: page.ogTitle || "",
+        ogDescription: page.ogDescription || "",
         ogImage: page.ogImage || "",
         pageBgColor: page.pageBgColor || "",
         pageBgImage: page.pageBgImage || "",
@@ -264,15 +310,23 @@ export class BuilderComponent implements OnInit, OnDestroy {
   savePageSettings() {
     if (!this.pageId()) return;
     this.savingSettings.set(true);
+    this.settingsError.set("");
     this.pageService
-      .update(this.pageId()!, this.pageSettings() as never)
+      .update(this.pageId()!, {
+        ...this.pageSettings(),
+        slug: this.pageSlug(),
+      } as never)
       .subscribe({
-        next: () => {
+        next: (page) => {
+          this.pageSlug.set(page.slug); // server sanitizes the slug
           this.savingSettings.set(false);
           this.settingsSaved.set(true);
           setTimeout(() => this.settingsSaved.set(false), 2500);
         },
-        error: () => this.savingSettings.set(false),
+        error: (err) => {
+          this.savingSettings.set(false);
+          this.settingsError.set(err?.error?.error || "Could not save settings");
+        },
       });
   }
 

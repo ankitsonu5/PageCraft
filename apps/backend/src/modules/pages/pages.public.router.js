@@ -4,6 +4,7 @@ const UAParser = require("ua-parser-js");
 const prisma = require("../../lib/prisma");
 const { getTrackingSettings, buildTrackingConfig } = require("../settings/settings.service");
 const { buildSeo } = require("../../utils/seo.util");
+const { withSections } = require("../../utils/sections.util");
 const router = express.Router();
 
 /** Published page by slug (case-insensitive), or null. Shared with the HTML renderer. */
@@ -46,7 +47,7 @@ router.get("/pages/:slug", async (req, res) => {
 
   const global = await getTrackingSettings();
   res.json({
-    ...page,
+    ...withSections(page),
     tracking: buildTrackingConfig(global, page),
     seo: buildSeo(page, requestOrigin(req)),
   });

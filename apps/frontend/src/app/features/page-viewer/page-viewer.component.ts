@@ -1,9 +1,23 @@
-import { Component, OnInit, Inject, PLATFORM_ID, signal } from "@angular/core";
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  Inject,
+  PLATFORM_ID,
+  HostListener,
+  signal,
+} from "@angular/core";
 import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { ActivatedRoute } from "@angular/router";
+import { Subscription, switchMap, catchError, of } from "rxjs";
 import { PageService, Page } from "../../core/services/page.service";
+import {
+  TrackingService,
+  ReleaseContext,
+} from "../../core/services/tracking.service";
 import { SectionRendererComponent } from "../builder/components/section-renderer/section-renderer.component";
 import { getCleanCampaignUrl } from "../../core/utils/url.util";
+import { detectStreamingPlatform } from "../../core/utils/streaming-platform.util";
 
 @Component({
   selector: "app-page-viewer",
@@ -11,222 +25,189 @@ import { getCleanCampaignUrl } from "../../core/utils/url.util";
   imports: [CommonModule, SectionRendererComponent],
   templateUrl: "./page-viewer.component.html",
 })
-export class PageViewerComponent implements OnInit {
+export class PageViewerComponent implements OnInit, OnDestroy {
   page: Page | null = null;
   loading = true;
   notFound = false;
   consentGiven = signal(false);
   showConsentBanner = signal(false);
 
+  private release: ReleaseContext | null = null;
+  private sub?: Subscription;
+
   constructor(
     private route: ActivatedRoute,
     private pageService: PageService,
+    private tracking: TrackingService,
     @Inject(PLATFORM_ID) private platformId: object,
-  ) { }
+  ) {}
 
   ngOnInit() {
-    const slug = this.route.snapshot.paramMap.get("slug")!;
-    this.pageService.getPublic(slug).subscribe({
-      next: (data) => {
+    // paramMap (not snapshot): the component is reused when navigating between
+    // two release slugs, and each one must load its own data + page_view.
+    this.sub = this.route.paramMap
+      .pipe(
+        switchMap((params) => {
+          this.loading = true;
+          this.notFound = false;
+          return this.pageService
+            .getPublic(params.get("slug")!)
+            .pipe(catchError(() => of(null)));
+        }),
+      )
+      .subscribe((data) => {
+        this.loading = false;
         this.page = data;
-        this.loading = false;
-
-        if (isPlatformBrowser(this.platformId)) {
-          document.title = data.metaTitle || data.title;
-
-          // Log Page View event asynchronously
-          this.trackView(data.id);
-
-          // Apply canonical URL & OG meta tags immediately for SEO
-          this.setCanonicalAndMetaTags(data);
-
-          // Apply page background immediately for critical rendering path
-          this.applyPageBackground(data.pageBgColor, data.pageBgImage);
-
-          // Defer non-critical pixel tracking scripts until main thread is idle
-          this.scheduleDeferredPixelInjection(data);
+        if (!data) {
+          this.notFound = true;
+          this.release = null;
+          return;
         }
-      },
-      error: () => {
-        this.loading = false;
-        this.notFound = true;
-      },
+        if (isPlatformBrowser(this.platformId)) this.onPageLoaded(data);
+      });
+  }
+
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
+  }
+
+  private onPageLoaded(data: Page) {
+    this.release = this.buildReleaseContext(data);
+    this.applySeo(data);
+    this.applyPageBackground(data.pageBgColor, data.pageBgImage);
+    this.trackView(data.id);
+
+    // Marketing tags: global (AGL settings) + page-level IDs, each loaded once
+    if (data.tracking) {
+      const stored = this.readConsent();
+      this.consentGiven.set(stored === "granted");
+      this.tracking.init(data.tracking, { consent: stored === "granted" });
+      this.showConsentBanner.set(
+        data.tracking.metaPixelIds.length > 0 && !stored,
+      );
+    }
+    // history.state.navigationId is unique per router navigation → one page_view per load
+    const navId = (history.state && history.state.navigationId) || 0;
+    this.tracking.pageView(this.release, `${data.slug}|${navId}`);
+  }
+
+  /** One delegated listener for every streaming link on the page (all section types). */
+  @HostListener("click", ["$event"])
+  onClick(event: MouseEvent) {
+    if (!this.release) return;
+    const a = (event.target as HTMLElement | null)?.closest?.("a");
+    if (!a || !a.href) return;
+    const platform = detectStreamingPlatform(a.href, a.dataset["platform"]);
+    if (!platform) return;
+    this.tracking.streamingClick(this.release, {
+      platform,
+      destination_url: a.href,
+      link_text: (a.innerText || "").trim().slice(0, 100),
     });
   }
 
   acceptConsent() {
     if (!isPlatformBrowser(this.platformId)) return;
-    localStorage.setItem("pc_consent", "granted");
+    this.writeConsent("granted");
     this.consentGiven.set(true);
     this.showConsentBanner.set(false);
-    const projectPixelId = this.page?.project?.metaPixelId;
-    const pageFbPixelId = this.page?.fbPixelId;
-    if (projectPixelId) this.injectMetaPixel(projectPixelId);
-    if (pageFbPixelId && pageFbPixelId !== projectPixelId) {
-      this.injectMetaPixel(pageFbPixelId, "meta-pixel-page-script");
-    }
+    this.tracking.grantConsent();
   }
 
   declineConsent() {
     if (!isPlatformBrowser(this.platformId)) return;
-    localStorage.setItem("pc_consent", "denied");
+    this.writeConsent("denied");
     this.showConsentBanner.set(false);
   }
 
-  private injectMetaPixel(pixelId: string, scriptId = "meta-pixel-script") {
-    if (document.getElementById(scriptId)) return;
-    const s = document.createElement("script");
-    s.id = scriptId;
-    s.innerHTML = `
-      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
-      (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init','${pixelId}');
-      fbq('track','PageView');
-    `;
-    document.head.appendChild(s);
-  }
-
-  /** Tag IDs (GTM-/G-/AW-) already loaded in this document — survives component re-creation. */
-  private get loadedTags(): Set<string> {
-    const w = window as any;
-    return (w.__PC_LOADED_TAGS ||= new Set<string>(w.__PC_GTM_ID ? [w.__PC_GTM_ID] : []));
-  }
-
-  private injectGTM(gtmId: string) {
-    // Skip if the same container is already on the page (e.g. the global one injected server-side)
-    if (this.loadedTags.has(gtmId)) return;
-    this.loadedTags.add(gtmId);
-    const s = document.createElement("script");
-    s.innerHTML = `
-      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;
-      j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
-      f.parentNode.insertBefore(j,f);
-      })(window,document,'script','dataLayer','${gtmId}');
-    `;
-    document.head.appendChild(s);
-
-    // GTM noscript iframe
-    const ns = document.createElement("noscript");
-    ns.innerHTML = `<iframe src="https://www.googletagmanager.com/ns.html?id=${gtmId}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
-    document.body.insertBefore(ns, document.body.firstChild);
-  }
-
-  /**
-   * Google tag (gtag.js) for GA4 (G-) and Google Ads (AW-) IDs. gtag.js is
-   * loaded once and gtag('js') runs once; each ID gets exactly one config, so
-   * GA4 + Ads together (or a revisit of the page) never double-load or
-   * double-count page_view.
-   */
-  private injectGoogleTag(tagId: string) {
-    if (this.loadedTags.has(tagId)) return;
-    this.loadedTags.add(tagId);
-    const w = window as any;
-    w.dataLayer = w.dataLayer || [];
-    if (!w.gtag) {
-      w.gtag = function () {
-        w.dataLayer.push(arguments);
-      };
-      w.gtag("js", new Date());
+  private readConsent(): string | null {
+    try {
+      return localStorage.getItem("pc_consent");
+    } catch {
+      return null;
     }
-    if (!document.getElementById("gtag-js")) {
-      const s = document.createElement("script");
-      s.id = "gtag-js";
-      s.async = true;
-      s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(tagId)}`;
-      document.head.appendChild(s);
+  }
+
+  private writeConsent(value: string) {
+    try {
+      localStorage.setItem("pc_consent", value);
+    } catch {
+      // storage blocked (private mode) — consent applies to this page view only
     }
-    w.gtag("config", tagId);
   }
 
-  private injectTikTokPixel(pixelId: string) {
-    if (document.getElementById("tiktok-pixel-script")) return;
-    const s = document.createElement("script");
-    s.id = "tiktok-pixel-script";
-    s.innerHTML = `
-      !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
-      ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];
-      ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
-      for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
-      ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};
-      ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";
-      ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;
-      ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=document.createElement("script");
-      o.type="text/javascript";o.async=!0;o.src=i+"?sdkid="+e+"&lib="+t;
-      var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
-      ttq.load('${pixelId}');ttq.page();}(window,document,'ttq');
-    `;
-    document.head.appendChild(s);
-  }
-
-  private injectSnapchatPixel(pixelId: string) {
-    if (document.getElementById("snapchat-pixel-script")) return;
-    const s = document.createElement("script");
-    s.id = "snapchat-pixel-script";
-    s.innerHTML = `
-      (function(e,t,n){if(e.snaptr)return;var a=e.snaptr=function()
-      {a.handleRequest?a.handleRequest.apply(a,arguments):a.queue.push(arguments)};
-      a.queue=[];var s='script';r=t.createElement(s);r.async=!0;
-      r.src=n;var u=t.getElementsByTagName(s)[0];
-      u.parentNode.insertBefore(r,u);})(window,document,
-      'https://sc-static.net/scevent.min.js');
-      snaptr('init','${pixelId}',{'user_email':'__INSERT_USER_EMAIL__'});
-      snaptr('track','PAGE_VIEW');
-    `;
-    document.head.appendChild(s);
+  private buildReleaseContext(data: Page): ReleaseContext {
+    const r = data.seo?.release;
+    return {
+      page_slug: data.slug,
+      artist_name: r?.artistName || data.artistName || "",
+      track_name: r?.trackName || data.title,
+      release_type: r?.releaseType || data.campaignType || "",
+      page_title: data.title,
+    };
   }
 
   private applyPageBackground(bgColor?: string, bgImage?: string) {
-    const wrapper = document.getElementById("page-viewer-wrapper");
-    if (!wrapper) return;
-    if (bgColor) {
-      // Only allow valid hex/rgb/named colors — strip anything else
-      const safe = /^(#[0-9a-fA-F]{3,8}|rgb[a]?\([\d,.\s%]+\)|[a-zA-Z]+)$/.test(
-        bgColor.trim(),
-      );
-      if (safe) wrapper.style.backgroundColor = bgColor.trim();
-    }
-    if (bgImage) {
-      // Only allow http/https image URLs — block data: and javascript: URIs
-      try {
-        const u = new URL(bgImage.trim());
-        if (u.protocol === "http:" || u.protocol === "https:") {
-          wrapper.style.backgroundImage = `url('${u.href}')`;
-          wrapper.style.backgroundSize = "cover";
-          wrapper.style.backgroundPosition = "center";
-          wrapper.style.backgroundRepeat = "no-repeat";
-        }
-      } catch {
-        // invalid URL — silently skip
+    // Wrapper is rendered in the same change-detection pass — wait a tick
+    setTimeout(() => {
+      const wrapper = document.getElementById("page-viewer-wrapper");
+      if (!wrapper) return;
+      if (bgColor) {
+        // Only allow valid hex/rgb/named colors — strip anything else
+        const safe =
+          /^(#[0-9a-fA-F]{3,8}|rgb[a]?\([\d,.\s%]+\)|[a-zA-Z]+)$/.test(
+            bgColor.trim(),
+          );
+        if (safe) wrapper.style.backgroundColor = bgColor.trim();
       }
-    }
+      if (bgImage) {
+        // Only allow http/https image URLs — block data: and javascript: URIs
+        try {
+          const u = new URL(bgImage.trim());
+          if (u.protocol === "http:" || u.protocol === "https:") {
+            wrapper.style.backgroundImage = `url('${u.href}')`;
+            wrapper.style.backgroundSize = "cover";
+            wrapper.style.backgroundPosition = "center";
+            wrapper.style.backgroundRepeat = "no-repeat";
+          }
+        } catch {
+          // invalid URL — silently skip
+        }
+      }
+    });
   }
 
-  private setCanonicalAndMetaTags(data: Page) {
-    const pageUrl = getCleanCampaignUrl(data.slug, data.customDomain);
+  /** Keep head tags in sync on client-side navigation (server renders them on first load). */
+  private applySeo(data: Page) {
+    const seo = data.seo;
+    const url = seo?.url || getCleanCampaignUrl(data.slug, data.customDomain);
+    const title = seo?.title || data.metaTitle || data.title;
+    document.title = title;
 
-    // 1. Canonical link element
-    let link: HTMLLinkElement | null = document.querySelector("link[rel='canonical']");
+    let link: HTMLLinkElement | null = document.querySelector(
+      "link[rel='canonical']",
+    );
     if (!link) {
       link = document.createElement("link");
       link.setAttribute("rel", "canonical");
       document.head.appendChild(link);
     }
-    link.setAttribute("href", pageUrl);
+    link.setAttribute("href", url);
 
-    // 2. Open Graph meta tags
-    this.setMetaTag("property", "og:url", pageUrl);
-    this.setMetaTag("property", "og:title", data.metaTitle || data.title);
-    if (data.metaDescription) this.setMetaTag("property", "og:description", data.metaDescription);
-    if (data.ogImage) this.setMetaTag("property", "og:image", data.ogImage);
+    const description = seo?.description || data.metaDescription;
+    if (description) this.setMetaTag("name", "description", description);
+    this.setMetaTag("property", "og:url", url);
+    this.setMetaTag("property", "og:title", seo?.ogTitle || title);
+    const ogDesc = seo?.ogDescription || description;
+    if (ogDesc) this.setMetaTag("property", "og:description", ogDesc);
+    const image = seo?.image || data.ogImage;
+    if (image) this.setMetaTag("property", "og:image", image);
   }
 
   private setMetaTag(attrName: string, attrVal: string, content: string) {
-    let meta: HTMLMetaElement | null = document.querySelector(`meta[${attrName}="${attrVal}"]`);
+    let meta: HTMLMetaElement | null = document.querySelector(
+      `meta[${attrName}="${attrVal}"]`,
+    );
     if (!meta) {
       meta = document.createElement("meta");
       meta.setAttribute(attrName, attrVal);
@@ -235,46 +216,15 @@ export class PageViewerComponent implements OnInit {
     meta.setAttribute("content", content);
   }
 
-  private scheduleDeferredPixelInjection(data: Page) {
-    // Google tags load immediately (not idle-deferred) so the page_view and
-    // early streaming clicks are not lost and Tag Assistant sees them on load.
-    if (data.gtmId) this.injectGTM(data.gtmId.trim());
-    if (data.ga4MeasurementId) this.injectGoogleTag(data.ga4MeasurementId.trim());
-    if (data.googleAdsId) this.injectGoogleTag(data.googleAdsId.trim());
-
-    const inject = () => {
-      if (data.tiktokPixelId) this.injectTikTokPixel(data.tiktokPixelId);
-      if (data.snapchatPixelId) this.injectSnapchatPixel(data.snapchatPixelId);
-
-      const projectPixelId = data.project?.metaPixelId;
-      const pageFbPixelId = data.fbPixelId;
-      if (projectPixelId || pageFbPixelId) {
-        const stored = localStorage.getItem("pc_consent");
-        if (stored === "granted") {
-          this.consentGiven.set(true);
-          if (projectPixelId) this.injectMetaPixel(projectPixelId);
-          if (pageFbPixelId && pageFbPixelId !== projectPixelId) {
-            this.injectMetaPixel(pageFbPixelId, "meta-pixel-page-script");
-          }
-        } else {
-          this.showConsentBanner.set(true);
-        }
-      }
-    };
-
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      (window as any).requestIdleCallback(inject, { timeout: 3500 });
-    } else {
-      setTimeout(inject, 2500);
-    }
-  }
-
   private trackView(pageId: string) {
     const params = this.route.snapshot.queryParams;
     this.pageService
       .trackView({
         pageId,
-        referrer: typeof document !== "undefined" ? document.referrer || undefined : undefined,
+        referrer:
+          typeof document !== "undefined"
+            ? document.referrer || undefined
+            : undefined,
         utmSource: params["utm_source"] || undefined,
         utmMedium: params["utm_medium"] || undefined,
         utmCampaign: params["utm_campaign"] || undefined,

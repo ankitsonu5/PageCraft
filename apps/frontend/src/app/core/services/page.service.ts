@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { environment } from "../../../environments/environment";
+import { TrackingConfig } from "./tracking.service";
 
 export interface PlatformLink {
   id?: string;
@@ -43,6 +44,12 @@ export interface Page {
   ga4StreamId?: string;
   metaTitle?: string;
   metaDescription?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  /** Public API only: effective tracking (global + page-level) */
+  tracking?: TrackingConfig;
+  /** Public API only: resolved SEO with auto-generated defaults */
+  seo?: PageSeo;
   createdAt: string;
   updatedAt: string;
   platformLinks?: PlatformLink[];
@@ -61,6 +68,22 @@ export interface Page {
   appleAffCode?: string;
   amazonAffCode?: string;
   spotifyAffCode?: string;
+}
+
+export interface PageSeo {
+  title: string;
+  description: string;
+  ogTitle: string;
+  ogDescription: string;
+  image: string;
+  url: string;
+  defaults: { title: string; description: string };
+  release: {
+    trackName: string;
+    artistName: string;
+    releaseType: string;
+    artwork: string;
+  };
 }
 
 export interface Section {

@@ -23,9 +23,12 @@ export class SectionRendererComponent {
     amazon?: string;
     spotify?: string;
   } = {};
+  /** true only inside the builder canvas — on live pages links must work normally */
+  @Input() editable = false;
   @Output() selectField = new EventEmitter<string>();
 
   onElementClick(event: MouseEvent, fieldName: string) {
+    if (!this.editable) return;
     event.preventDefault();
     event.stopPropagation();
     this.selectField.emit(fieldName);

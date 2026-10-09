@@ -9,7 +9,6 @@ const fs = require("fs");
 const multer = require("multer");
 
 const { authMiddleware } = require("./middleware/auth.middleware");
-const { renderIndexHtml } = require("./utils/tracking-snippet.util");
 const authRouter = require("./modules/auth/auth.router");
 const projectsRouter = require("./modules/projects/projects.router");
 const pagesRouter = require("./modules/pages/pages.router");
@@ -19,6 +18,8 @@ const linksRouter = require("./modules/links/links.router");
 const linksManageRouter = require("./modules/links/links.manage.router");
 const leadsRouter = require("./modules/leads/leads.router");
 const leadsManageRouter = require("./modules/leads/leads.manage.router");
+const settingsRouter = require("./modules/settings/settings.router");
+const { createIndexHandler } = require("./modules/pages/pages.html");
 
 const app = express();
 app.set("trust proxy", 1); // Nginx proxy ke peeche chal raha hai
@@ -119,6 +120,7 @@ app.use("/uploads", express.static(uploadsDir));
 app.use("/api/projects", authMiddleware, projectsRouter);
 app.use("/api/pages", authMiddleware, pagesRouter);
 app.use("/api/analytics", authMiddleware, analyticsRouter);
+app.use("/api/settings", authMiddleware, settingsRouter);
 app.use("/api/links", authMiddleware, linksManageRouter);
 app.use("/api/leads", leadsLimiter, leadsRouter);
 app.use("/api/leads/manage", authMiddleware, leadsManageRouter);
@@ -137,13 +139,11 @@ app.get("/p/:slug", (req, res) => {
 });
 
 // ─── ANGULAR STATIC FILES ─────────────────────────
-// index.html always goes through renderIndexHtml so the global GTM snippet is
-// present in the raw HTML of every route (never served raw by express.static).
+// index.html always goes through the index handler so the global GTM snippet
+// (and SEO tags on release URLs) are in the raw HTML of every route — it is
+// never served raw by express.static.
 const publicDir = path.join(__dirname, "../../frontend/dist/frontend/browser");
-const sendIndex = (req, res) => {
-  res.set("Cache-Control", "no-cache");
-  res.type("html").send(renderIndexHtml(path.join(publicDir, "index.html")));
-};
+const sendIndex = createIndexHandler(publicDir);
 app.get("/index.html", sendIndex);
 app.use(express.static(publicDir, { index: false }));
 app.get("*", sendIndex);

@@ -2,9 +2,9 @@
 @if (section.type === "header") {
   <header
     [style.background-color]="d['bgColor']"
-    class="px-6 py-4 border-b border-black/5"
+    class="px-4 sm:px-6 py-3 sm:py-4 border-b border-black/5"
   >
-    <div class="max-w-6xl mx-auto flex items-center gap-6">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center gap-x-6 gap-y-1">
       <!-- Logo -->
       <div class="flex-shrink-0">
         @if (d["logoType"] === "image" && d["logoUrl"]) {
@@ -18,11 +18,11 @@
         }
       </div>
       <!-- Nav Links -->
-      <nav class="flex items-center gap-5 flex-1">
+      <nav class="flex flex-wrap items-center gap-x-4 sm:gap-x-5 flex-1 min-w-0">
         @for (link of d["links"]; track $index) {
           <a
             [href]="link.url || '#'"
-            class="text-sm font-medium hover:opacity-70 transition-opacity"
+            class="inline-block py-2.5 text-sm font-medium hover:opacity-70 transition-opacity"
             [style.color]="d['linkColor'] || d['textColor']"
             >{{ link.label }}</a
           >
@@ -89,7 +89,7 @@
                     [href]="social.url"
                     target="_blank"
                     rel="noopener"
-                    class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-opacity hover:opacity-80"
+                    class="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold transition-opacity hover:opacity-80"
                     [style.background-color]="socialBg(social.platform)"
                     style="color: #fff"
                     [title]="social.platform"
@@ -110,12 +110,12 @@
             >
               {{ col.heading }}
             </h4>
-            <ul class="space-y-2">
+            <ul class="space-y-0.5">
               @for (link of col.links; track $index) {
                 <li>
                   <a
                     [href]="link.url || '#'"
-                    class="text-sm hover:opacity-70 transition-opacity"
+                    class="inline-block py-2 text-sm hover:opacity-70 transition-opacity"
                     [style.color]="d['mutedColor'] || '#9ca3af'"
                     >{{ link.label }}</a
                   >
@@ -260,20 +260,20 @@
 
 <!-- ─── IMAGE + TEXT ──────────────────────────────────────────────── -->
 @if (section.type === "image-text") {
-  <section [style.background-color]="d['bgColor']" class="px-8 py-16">
+  <section [style.background-color]="d['bgColor']" class="px-6 md:px-8 py-12 md:py-16">
     <div
-      class="max-w-5xl mx-auto flex gap-10 items-center"
-      [class]="d['imagePosition'] === 'right' ? 'flex-row' : 'flex-row-reverse'"
+      class="max-w-5xl mx-auto flex flex-col gap-8 md:gap-10 md:items-center"
+      [ngClass]="d['imagePosition'] === 'right' ? 'md:flex-row' : 'md:flex-row-reverse'"
     >
       <!-- Text -->
-      <div class="flex-1">
+      <div class="w-full md:flex-1 min-w-0">
         @if (d["tag"]) {
           <span
             class="text-xs font-semibold text-brand-500 uppercase tracking-wider"
             >{{ d["tag"] }}</span
           >
         }
-        <h2 class="text-3xl font-bold text-gray-900 mt-2 mb-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mt-2 mb-4">
           {{ d["heading"] }}
         </h2>
         <p class="text-gray-500 leading-relaxed mb-6">{{ d["body"] }}</p>
@@ -286,14 +286,14 @@
         }
       </div>
       <!-- Image -->
-      <div class="flex-1">
+      <div class="w-full md:flex-1 min-w-0">
         @if (d["imageUrl"]) {
           <img
             [src]="d['imageUrl']"
             alt=""
             class="w-full rounded-2xl object-cover aspect-video"
           />
-        } @else {
+        } @else if (editable) {
           <div
             class="w-full rounded-2xl bg-gray-200 aspect-video flex items-center justify-center text-gray-400 text-sm"
           >
@@ -389,28 +389,28 @@
           <input
             type="text"
             placeholder="Your Name"
-            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-brand-500"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base sm:text-sm focus:outline-none focus:border-brand-500"
           />
         }
         @if (d["showPhone"]) {
           <input
             type="tel"
             placeholder="Phone Number"
-            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-brand-500"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base sm:text-sm focus:outline-none focus:border-brand-500"
           />
         }
         @if (d["showEmail"]) {
           <input
             type="email"
             placeholder="Email Address"
-            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-brand-500"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base sm:text-sm focus:outline-none focus:border-brand-500"
           />
         }
         @if (d["showMessage"]) {
           <textarea
             rows="4"
             placeholder="Message"
-            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm resize-none focus:outline-none focus:border-brand-500"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base sm:text-sm resize-none focus:outline-none focus:border-brand-500"
           ></textarea>
         }
         <button
@@ -472,7 +472,7 @@
             allowfullscreen
           ></iframe>
         </div>
-      } @else {
+      } @else if (editable) {
         <div
           class="w-full rounded-2xl bg-gray-800 flex flex-col items-center justify-center text-gray-400 gap-3"
           style="aspect-ratio: 16/9"
@@ -505,7 +505,7 @@
       <div
         (click)="onElementClick($event, 'coverUrl')"
         class="cursor-pointer hover:ring-4 hover:ring-brand-400 rounded-2xl transition-all"
-        title="Click to edit Cover Artwork"
+        [title]="editable ? 'Click to edit Cover Artwork' : ''"
       >
         @if (d["coverUrl"]) {
           <img
@@ -526,7 +526,7 @@
       <div
         (click)="onElementClick($event, 'title')"
         class="text-center cursor-pointer hover:bg-white/10 p-2 rounded-xl transition-all"
-        title="Click to edit Track Title & Artist"
+        [title]="editable ? 'Click to edit Track Title & Artist' : ''"
       >
         <p
           class="text-xs font-semibold uppercase tracking-widest mb-1 opacity-50"
@@ -542,13 +542,14 @@
           @for (link of activeLinks; track link.platform) {
             <a
               [href]="getAffiliateUrl(link.platform, link.url)"
+              [attr.data-platform]="link.platform"
               (click)="onElementClick($event, 'platform_' + link.platform); trackPlatformClick(link)"
               target="_blank"
               rel="noopener"
               class="flex items-center gap-3 w-full px-5 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-[1.02] shadow-lg cursor-pointer"
               [style.background-color]="platformBg(link.platform)"
               [style.color]="platformColor(link.platform)"
-              [title]="'Click to edit ' + link.label + ' link'"
+              [title]="editable ? 'Click to edit ' + link.label + ' link' : ''"
             >
               <span [innerHTML]="getPlatformIconSvg(link.platform, link.icon)" class="flex items-center justify-center"></span>
               Listen on {{ link.label }}
@@ -585,7 +586,7 @@
       <div
         (click)="onElementClick($event, 'episodeNumber')"
         class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 backdrop-blur border border-white/20 cursor-pointer hover:ring-2 hover:ring-indigo-400 hover:scale-105 transition-all"
-        title="Click to edit Episode Number & Release Date"
+        [title]="editable ? 'Click to edit Episode Number & Release Date' : ''"
       >
         <span class="w-2 h-2 rounded-full" [style.background-color]="d['accentColor'] || '#6366f1'"></span>
         <span>Episode {{ d["episodeNumber"] || "1" }}</span>
@@ -598,7 +599,7 @@
       <div
         (click)="onElementClick($event, 'artworkUrl')"
         class="cursor-pointer hover:ring-4 hover:ring-indigo-400 hover:ring-offset-2 hover:ring-offset-slate-900 rounded-3xl transition-all"
-        title="Click to edit Artwork & Image"
+        [title]="editable ? 'Click to edit Artwork & Image' : ''"
       >
         @if (d["artworkUrl"] || d["coverUrl"]) {
           <img
@@ -627,7 +628,7 @@
         <h2
           (click)="onElementClick($event, 'title')"
           class="text-2xl font-extrabold leading-snug tracking-tight cursor-pointer hover:text-indigo-300 hover:underline transition-all p-1 rounded-lg"
-          title="Click to edit Episode Title"
+          [title]="editable ? 'Click to edit Episode Title' : ''"
         >
           {{ d["title"] }}
         </h2>
@@ -635,7 +636,7 @@
         <div
           (click)="onElementClick($event, 'hostName')"
           class="flex flex-wrap items-center justify-center gap-2 text-xs font-medium opacity-80 pt-1 cursor-pointer hover:scale-105 transition-transform"
-          title="Click to edit Host & Guest Names"
+          [title]="editable ? 'Click to edit Host & Guest Names' : ''"
         >
           @if (d["hostName"]) {
             <span class="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
@@ -653,7 +654,7 @@
           <p
             (click)="onElementClick($event, 'description')"
             class="text-xs opacity-70 leading-relaxed pt-2 line-clamp-3 cursor-pointer hover:opacity-100 hover:bg-white/5 p-2 rounded-xl transition-all"
-            title="Click to edit Episode Description"
+            [title]="editable ? 'Click to edit Episode Description' : ''"
           >
             {{ d["description"] }}
           </p>
@@ -666,13 +667,14 @@
           @for (link of activeLinks; track $index) {
             <a
               [href]="getAffiliateUrl(link.platform, link.url)"
+              [attr.data-platform]="link.platform"
               (click)="onElementClick($event, 'platform_' + link.platform); trackPlatformClick(link)"
               target="_blank"
               rel="noopener"
               class="flex items-center justify-between w-full px-5 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-200 hover:scale-[1.02] shadow-lg cursor-pointer hover:ring-2 hover:ring-indigo-400"
               [style.background-color]="platformBg(link.platform)"
               [style.color]="platformColor(link.platform)"
-              [title]="'Click to edit ' + link.label + ' link'"
+              [title]="editable ? 'Click to edit ' + link.label + ' link' : ''"
             >
               <div class="flex items-center gap-3">
                 <span [innerHTML]="getPlatformIconSvg(link.platform, link.icon)" class="flex items-center justify-center"></span>
@@ -784,7 +786,7 @@
           @if (d["showName"]) {
             <input
               type="text"
-              class="w-full px-4 py-3 rounded-xl text-gray-900 text-sm outline-none border-0"
+              class="w-full px-4 py-3 rounded-xl text-gray-900 text-base sm:text-sm outline-none border-0"
               [placeholder]="d['namePlaceholder'] || 'Your Name'"
               [ngModel]="fanName()"
               (ngModelChange)="fanName.set($event)"
@@ -794,7 +796,7 @@
           <input
             type="email"
             required
-            class="w-full px-4 py-3 rounded-xl text-gray-900 text-sm outline-none border-0"
+            class="w-full px-4 py-3 rounded-xl text-gray-900 text-base sm:text-sm outline-none border-0"
             [placeholder]="d['emailPlaceholder'] || 'Your Email'"
             [ngModel]="fanEmail()"
             (ngModelChange)="fanEmail.set($event)"
@@ -864,6 +866,7 @@
         @if (d["spotifyUrl"]) {
           <a
             [href]="d['spotifyUrl']"
+            data-platform="spotify"
             target="_blank"
             rel="noopener"
             class="flex items-center justify-center gap-3 w-full px-5 py-3.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
@@ -875,6 +878,7 @@
         @if (d["appleUrl"]) {
           <a
             [href]="d['appleUrl']"
+            data-platform="apple_music"
             target="_blank"
             rel="noopener"
             class="flex items-center justify-center gap-3 w-full px-5 py-3.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
@@ -886,6 +890,7 @@
         @if (d["amazonUrl"]) {
           <a
             [href]="d['amazonUrl']"
+            data-platform="amazon_music"
             target="_blank"
             rel="noopener"
             class="flex items-center justify-center gap-3 w-full px-5 py-3.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"

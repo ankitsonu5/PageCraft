@@ -41,6 +41,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: "settings/tracking",
+    loadComponent: () =>
+      import("./features/settings/tracking-settings.component").then(
+        (m) => m.TrackingSettingsComponent,
+      ),
+    canActivate: [authGuard],
+  },
+  {
     path: "leads/:projectId",
     loadComponent: () =>
       import("./features/leads/leads.component").then((m) => m.LeadsComponent),

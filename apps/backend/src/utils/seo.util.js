@@ -3,17 +3,10 @@
  * fields fall back to defaults generated from the track / artist / release data.
  */
 
+const { parseSections } = require("./sections.util");
+
 const RELEASE_SECTION_TYPES = ["smart-link", "pre-save", "podcast-smart-link"];
 
-function parseSections(sections) {
-  if (Array.isArray(sections)) return sections;
-  try {
-    const parsed = JSON.parse(sections || "[]");
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 const clean = (v) => (typeof v === "string" ? v.trim() : "");
 const truncate = (s, max) =>
@@ -98,7 +91,7 @@ function buildSeoHeadTags(seo) {
   const tags = [
     `<meta name="description" content="${escapeHtml(seo.description)}">`,
     seo.url && `<link rel="canonical" href="${escapeHtml(seo.url)}">`,
-    `<meta property="og:type" content="music.song">`,
+    `<meta property="og:type" content="${seo.release.isPodcast ? "website" : "music.song"}">`,
     `<meta property="og:title" content="${escapeHtml(seo.ogTitle)}">`,
     `<meta property="og:description" content="${escapeHtml(seo.ogDescription)}">`,
     seo.url && `<meta property="og:url" content="${escapeHtml(seo.url)}">`,

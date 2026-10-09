@@ -1,5 +1,6 @@
 const prisma = require("../../lib/prisma");
 const { getTrackingSettings } = require("../settings/settings.service");
+const { serializeSections, withSections } = require("../../utils/sections.util");
 
 const RESERVED_SLUGS = [
   "admin",
@@ -37,7 +38,7 @@ async function listPages(projectId, filters = {}) {
   if (campaignType) where.campaignType = campaignType;
   if (status) where.status = status;
 
-  return prisma.page.findMany({
+  const pages = await prisma.page.findMany({
     where,
     orderBy: { createdAt: "desc" },
     include: {
@@ -49,6 +50,7 @@ async function listPages(projectId, filters = {}) {
       },
     },
   });
+  return pages.map(withSections);
 }
 
 async function getPage(id) {
@@ -65,7 +67,7 @@ async function getPage(id) {
     },
   });
   if (!page) throw { status: 404, message: "Page not found" };
-  return page;
+  return withSections(page);
 }
 
 async function createPage(data) {
@@ -151,7 +153,7 @@ async function createPage(data) {
     },
   });
 
-  return page;
+  return withSections(page);
 }
 
 async function updatePage(id, data) {
@@ -194,6 +196,7 @@ async function updatePage(id, data) {
     amazonAffCode,
     spotifyAffCode,
     platformLinks,
+    sections,
   } = data;
 
   let cleanSlug;
@@ -236,6 +239,7 @@ async function updatePage(id, data) {
     where: { id },
     data: {
       ...(title !== undefined && { title }),
+      ...(sections !== undefined && { sections: serializeSections(sections) }),
       ...(cleanSlug !== undefined && { slug: cleanSlug }),
       ...(campaignType !== undefined && { campaignType }),
       ...(brand !== undefined && { brand }),
@@ -278,7 +282,7 @@ async function updatePage(id, data) {
     },
   });
 
-  return updated;
+  return withSections(updated);
 }
 
 async function publishPage(pageId) {
@@ -310,7 +314,7 @@ async function publishPage(pageId) {
     }
   }
 
-  return prisma.page.update({
+  const published = await prisma.page.update({
     where: { id: pageId },
     data: {
       isPublished: true,
@@ -322,6 +326,7 @@ async function publishPage(pageId) {
       platformLinks: { orderBy: { order: "asc" } },
     },
   });
+  return withSections(published);
 }
 
 async function duplicatePage(id) {
@@ -340,7 +345,7 @@ async function duplicatePage(id) {
     slug = `${baseSlug}-${attempt++}`;
   }
 
-  return prisma.page.create({
+  const copy = await prisma.page.create({
     data: {
       projectId: src.projectId,
       title: `${src.title} (Copy)`,
@@ -382,6 +387,7 @@ async function duplicatePage(id) {
       platformLinks: { orderBy: { order: "asc" } },
     },
   });
+  return withSections(copy);
 }
 
 async function deletePage(id) {

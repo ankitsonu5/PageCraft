@@ -15,6 +15,7 @@ const prismaMock = {
   page: {
     findMany: jest.fn(),
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
@@ -30,6 +31,10 @@ const prismaMock = {
     create: jest.fn(),
     count: jest.fn(),
     groupBy: jest.fn(),
+  },
+  trackingSettings: {
+    findUnique: jest.fn(),
+    upsert: jest.fn(),
   },
   $transaction: jest.fn(),
 };

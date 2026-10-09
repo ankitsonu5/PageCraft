@@ -195,7 +195,7 @@
           }
 
           <!-- Section content -->
-          <app-section-renderer [section]="section" (selectField)="selectField.emit($event)" />
+          <app-section-renderer [section]="section" [editable]="true" (selectField)="selectField.emit($event)" />
 
           <!-- Add between sections -->
           @if (hoveredId === section.id || selectedId === section.id) {

@@ -146,7 +146,11 @@ describe("PATCH /api/pages/:id", () => {
       title: "Updated Title",
       sections: [{ id: "sec-1", type: "hero", data: {} }],
     };
-    prismaMock.page.update.mockResolvedValue(updated);
+    prismaMock.page.findUnique.mockResolvedValue(MOCK_PAGE);
+    prismaMock.page.update.mockResolvedValue({
+      ...updated,
+      sections: JSON.stringify(updated.sections), // TEXT column
+    });
 
     const res = await request(app)
       .patch("/api/pages/page-1")
@@ -159,6 +163,10 @@ describe("PATCH /api/pages/:id", () => {
     expect(res.status).toBe(200);
     expect(res.body.title).toBe("Updated Title");
     expect(res.body.sections).toHaveLength(1);
+    // sections must be persisted (stored as a JSON string)
+    expect(prismaMock.page.update.mock.calls[0][0].data.sections).toBe(
+      JSON.stringify(updated.sections),
+    );
   });
 });
 
@@ -260,20 +268,45 @@ describe("DELETE /api/pages/:id", () => {
 
 // ─── GET /api/public/pages/:slug ──────────────────
 describe("GET /api/public/pages/:slug (public)", () => {
-  it("published page → 200 (no auth needed)", async () => {
-    prismaMock.page.findUnique.mockResolvedValue({
+  const { clearTrackingSettingsCache } = require("../src/modules/settings/settings.service");
+  beforeEach(() => {
+    clearTrackingSettingsCache();
+    prismaMock.trackingSettings.findUnique.mockResolvedValue({
+      id: "global",
+      gtmId: "GTM-GLOBAL1",
+      ga4MeasurementId: "G-GLOBAL123",
+      googleAdsId: "AW-123456789",
+      metaPixelId: "111111",
+      googleTagsViaGtm: false,
+    });
+  });
+
+  it("published page → 200 with merged tracking + SEO defaults (no auth needed)", async () => {
+    prismaMock.page.findFirst.mockResolvedValue({
       ...MOCK_PAGE,
       isPublished: true,
+      artistName: "Ashwin Gane",
+      ga4MeasurementId: "G-GLOBAL123", // same as global → must not duplicate
+      fbPixelId: "222222",
+      sections: JSON.stringify([
+        { id: "s1", type: "smart-link", data: { title: "Heartbeat", releaseType: "single" } },
+      ]),
+      project: { name: "AGL", metaPixelId: null },
     });
 
     const res = await request(app).get("/api/public/pages/heart-surgery");
 
     expect(res.status).toBe(200);
     expect(res.body.slug).toBe("heart-surgery");
+    expect(res.body.tracking.gtmIds).toEqual(["GTM-GLOBAL1"]);
+    expect(res.body.tracking.ga4Ids).toEqual(["G-GLOBAL123"]);
+    expect(res.body.tracking.metaPixelIds).toEqual(["111111", "222222"]);
+    expect(res.body.seo.title).toBe("Heartbeat by Ashwin Gane | Listen Now");
+    expect(res.body.seo.ogTitle).toBe(res.body.seo.title);
   });
 
   it("unpublished page → 404", async () => {
-    prismaMock.page.findUnique.mockResolvedValue({
+    prismaMock.page.findFirst.mockResolvedValue({
       ...MOCK_PAGE,
       isPublished: false,
     });
@@ -284,7 +317,7 @@ describe("GET /api/public/pages/:slug (public)", () => {
   });
 
   it("nonexistent slug → 404", async () => {
-    prismaMock.page.findUnique.mockResolvedValue(null);
+    prismaMock.page.findFirst.mockResolvedValue(null);
 
     const res = await request(app).get("/api/public/pages/ghost-page");
 
